@@ -1,0 +1,373 @@
+"""Android service: all calls are serialized by the Java repository worker.
+
+No disk, UI, telemetry or notifications in this module. Automatic connection
+uses opt-in saved credentials at most once per scheduled attempt; a rejected
+login or rejected newly authenticated session stops further automatic attempts.
+Java provides encrypted Android Keystore storage and lifecycle callbacks.
+"""
+from __future__ import annotations
+import copy
+import hashlib
+import json
+import time
+from skula_shared.connector import SkulaConnector, ConnectorError
+from skula_shared.data import KINDS as DESKTOP_KINDS, LABELS, SnapshotTracker, demo_sections
+from mobile_changes import ChangeJournal
+from mobile_announcements import AnnouncementArchives
+
+KINDS = (*DESKTOP_KINDS, "homework")
+
+
+class MobileService:
+    def __init__(self, factory=SkulaConnector, clock=time.time):
+        self.factory, self.clock = factory, clock
+        self.client = None
+        self.tracker = SnapshotTracker(extra_kinds=("homework",))
+        self.journal = ChangeJournal(self.tracker.year)
+        self.announcement_archives = AnnouncementArchives()
+        self.profile = ""
+        self.credentials = None
+        self.mode = "idle"
+        self.errors = {}
+        self.status = "Połącz konto Synergia lub obejrzyj demo."
+        self.retry_after = 0.0
+        self.blocked = set()
+        self.progress = None
+        self.last_changes = {}
+        self.auto_login_blocked = False
+        self.live_saved = None
+
+    def state(self):
+        sections = copy.deepcopy(self.tracker.sections)
+        if self.mode != "demo":
+            self.announcement_archives.decorate(self.profile, sections["announcements"])
+        return {"mode": self.mode, "status": self.status,
+                "sections": sections, "change_feed": self.journal.state(),
+                "updated_at": dict(self.tracker.updated_at), "errors": dict(self.errors),
+                "connected": self.client is not None, "remembered": bool(self.credentials),
+                "needs_login": self.client is None and self.mode != "demo",
+                "retry_after": self.retry_after, "changes": dict(self.last_changes), "profile": self.profile, "year": self.tracker.year, "auto_login_blocked": self.auto_login_blocked}
+
+    def begin_visit(self):
+        self.journal.begin_visit(self.clock())
+        return self.state_json()
+
+    def end_visit(self):
+        self.journal.end_visit()
+
+    def state_json(self):
+        return json.dumps(self.state(), ensure_ascii=False)
+
+    def set_progress(self, progress):
+        self.progress = progress
+
+    def publish(self):
+        if self.progress is not None:
+            self.progress.update(self.state_json())
+
+    def export_json(self):
+        if self.mode == "demo":
+            return ""
+        return json.dumps({"version": 1, "profile": self.profile,
+                           "credentials": self.credentials, "snapshot": self.tracker.export(), "change_journal": self.journal.export(),
+                           "announcement_archives": self.announcement_archives.export(),
+                           "retry_after": self.retry_after, "auto_login_blocked": self.auto_login_blocked}, ensure_ascii=False)
+
+    def portable_json(self):
+        if self.mode == "demo":
+            raise ValueError("Demo is not a portable school account")
+        from mobile_backup import export
+        return export(self.export_json())
+
+    def validate_portable_json(self, raw):
+        from mobile_backup import validate
+        return json.dumps(validate(raw), ensure_ascii=False)
+
+    def import_portable_json(self, raw):
+        # Validate using a separate service before closing the current session.
+        canonical = self.validate_portable_json(raw)
+        candidate = MobileService(factory=self.factory, clock=self.clock)
+        candidate.restore_json(canonical)
+        self.close_client()
+        self.credentials = None
+        self.live_saved = None
+        self.errors = {}
+        self.blocked.clear()
+        self.last_changes = {}
+        self.retry_after = 0
+        return self.restore_json(canonical)
+
+    def restore_json(self, raw):
+        value = json.loads(raw) if raw else {}
+        if not isinstance(value, dict) or (value and value.get("version") != 1):
+            raise ValueError("Invalid saved state")
+        tracker = SnapshotTracker(value.get("snapshot"), extra_kinds=("homework",))
+        profile = value.get("profile", "")
+        credentials = value.get("credentials")
+        if not isinstance(profile, str):
+            raise ValueError("Invalid profile")
+        if credentials is not None:
+            if (not isinstance(credentials, dict)
+                or not all(isinstance(credentials.get(k), str) and credentials[k] for k in ("login", "password"))
+                or self.profile_id(credentials["login"]) != profile):
+                raise ValueError("Invalid credentials")
+        blocked = value.get("auto_login_blocked", False)
+        if not isinstance(blocked, bool):
+            raise ValueError("Invalid automatic login state")
+        retry = value.get("retry_after", 0)
+        if not isinstance(retry, (int, float)) or not 0 <= retry < float("inf"):
+            raise ValueError("Invalid retry date")
+        archives = AnnouncementArchives.from_state(value)
+        archives.restore_into(profile, tracker)
+        journal = ChangeJournal(tracker.year, value.get("change_journal"))
+        journal.active = self.journal.active
+        self.tracker, self.profile, self.credentials, self.journal = tracker, profile, credentials, journal
+        self.announcement_archives = archives
+        self.auto_login_blocked = blocked
+        self.retry_after = max(self.retry_after, retry)
+        self.mode = "offline" if tracker.initialized else "idle"
+        self.status = "Zapisana kopia. Połącz konto, aby pobrać aktualne dane." if tracker.initialized else "Połącz konto Synergia lub obejrzyj demo."
+        return self.state_json()
+
+    @staticmethod
+    def profile_id(login):
+        return hashlib.sha256(login.strip().encode()).hexdigest()
+
+    def close_client(self):
+        if self.client is not None:
+            self.client.close()
+        self.client = None
+
+    def revoke_remembered(self):
+        if self.mode == "demo":
+            # Revoke the original account's saved password too, before login.
+            if self.live_saved:
+                self.live_saved["credentials"] = None
+        self.credentials = None
+        return self.state_json()
+
+    def _allowed(self):
+        if self.clock() < self.retry_after:
+            self.status = "dziennik ograniczył zapytania. Spróbuj po upływie wskazanej przerwy."
+            return False
+        return True
+
+    def connect(self, login, password, remember=False, fetch=True):
+        self.last_changes = {}
+        self.auto_login_blocked = False
+        login = login.strip()
+        if not login or not password:
+            self.errors["connection"] = "Wpisz login Synergia i hasło."
+            return self.state_json()
+        if not self._allowed():
+            return self.state_json()
+        previous = self.live_saved if self.mode == "demo" else json.loads(self.export_json())
+        self.close_client()
+        self.mode = "offline" if self.tracker.initialized and self.mode != "demo" else "idle"
+        self.errors.clear()
+        if not remember:
+            self.credentials = None
+        candidate = self.factory(login, password)
+        try:
+            candidate.connect()
+        except ConnectorError as exc:
+            candidate.close()
+            self.errors["connection"] = str(exc)
+            self.status = "Nie udało się połączyć konta."
+            if exc.rate_limited:
+                self.retry_after = self.clock() + 3600
+            # Never retain a demo snapshot as a real account's offline data.
+            if previous:
+                self.restore_json(json.dumps(previous))
+                self.status = "Nie udało się połączyć konta."
+            return self.state_json()
+        except Exception:
+            candidate.close()
+            self.errors["connection"] = "Nieoczekiwana odpowiedź logowania. Sprawdź konto w oficjalnym dzienniku."
+            self.status = "Nie udało się połączyć konta."
+            if previous:
+                self.restore_json(json.dumps(previous))
+                self.status = "Nie udało się połączyć konta."
+            return self.state_json()
+        target_profile = self.profile_id(login)
+        same_profile = previous and previous.get("profile") == target_profile
+        active = self.journal.active
+        self.tracker = SnapshotTracker(previous.get("snapshot"), extra_kinds=("homework",)) if same_profile else SnapshotTracker(extra_kinds=("homework",))
+        self.announcement_archives = AnnouncementArchives.from_state(previous or {})
+        self.announcement_archives.restore_into(target_profile, self.tracker)
+        self.journal = ChangeJournal(self.tracker.year, previous.get("change_journal") if same_profile else None)
+        self.journal.active = active
+        if active and not same_profile:
+            self.journal.begin_visit(self.clock())
+        self.profile = target_profile
+        self.credentials = {"login": login, "password": password} if remember else None
+        self.client, self.mode = candidate, "live"
+        self.blocked.clear()
+        self.live_saved = None
+        if not fetch:
+            self.status = "Konto połączone. Kolejny odczyt danych po zakończeniu przerwy 5 minut."
+            return self.state_json()
+        return self.refresh(after_login=True)
+
+    def open(self):
+        self.last_changes = {}
+        if self.mode == "demo":
+            return self.state_json()
+        if self.client:
+            return self.refresh()
+        if self.auto_login_blocked:
+            self.status = "Automatyczne logowanie wstrzymane. Połącz konto ponownie przyciskiem Konto."
+            return self.state_json()
+        if self.credentials:
+            credentials = dict(self.credentials)
+            result = self.connect(credentials["login"], credentials["password"], True)
+            if self.client is None and self.clock() >= self.retry_after:
+                self.auto_login_blocked = True
+                self.status = "Automatyczne logowanie wstrzymane. Połącz konto ponownie przyciskiem Konto."
+                return self.state_json()
+            return result
+        return self.state_json()
+
+    def refresh(self, *, after_login=False):
+        self.last_changes = {}
+        if self.mode == "demo":
+            return self.state_json()
+        if not self._allowed():
+            return self.state_json()
+        if not self.client:
+            self.status = "Połącz konto, aby odświeżyć dane."
+            return self.state_json()
+        successes, changes = 0, {}
+        for kind in ("grades", "schedule", "attendance", "timetable", "announcements", "homework", "messages"):
+            if kind in self.blocked:
+                continue
+            self.status = "Pobieram: " + LABELS[kind].lower() + "…"
+            self.publish()
+            try:
+                rows = self.client.fetch(kind)
+                if kind == "announcements":
+                    prepared = self.announcement_archives.prepare(self.profile, rows)
+                    changes[kind] = self.journal.apply(self.tracker, kind, prepared["items"], self.clock())
+                    prepared["updated_at"] = self.tracker.updated_at[kind]
+                    self.announcement_archives.commit(self.profile, prepared, self.tracker)
+                else:
+                    changes[kind] = self.journal.apply(self.tracker, kind, rows, self.clock())
+                self.errors.pop(kind, None)
+                successes += 1
+            except ConnectorError as exc:
+                self.errors[kind] = str(exc)
+                if exc.rate_limited:
+                    self.retry_after = self.clock() + 3600
+                    break
+                if exc.requires_login:
+                    if kind in {"messages", "homework"}:
+                        # A module may be unavailable for this account while the
+                        # core school session and other sections still work.
+                        self.blocked.add(kind)
+                    else:
+                        self.close_client()
+                        # An existing session may expire while credentials remain valid.
+                        # Retry only on the next scheduled attempt (Java enforces 5 min).
+                        # A failed fresh session stops recovery to avoid a login loop.
+                        self.auto_login_blocked = after_login or not bool(self.credentials)
+                        break
+            except Exception:
+                self.errors[kind] = "Nie rozpoznano danych sekcji. Zachowano poprzedni odczyt."
+            self.publish()
+        self.last_changes = changes
+        self.mode = "live" if self.client and successes else "offline" if self.tracker.initialized else "idle"
+        if self.retry_after > self.clock():
+            self.status = "dziennik ograniczył zapytania. Pobieranie wstrzymane na co najmniej godzinę."
+        elif not self.client:
+            self.status = ("Sesja wygasła. Zapamiętane konto zostanie połączone przy następnej próbie pobrania; pokazuję ostatnią kopię."
+                           if self.credentials and not self.auto_login_blocked else
+                           "Sesja wygasła. Połącz konto ponownie; zachowano dostępne dane.")
+        elif successes == len(KINDS):
+            self.status = "Dane aktualne. " + (f"Zmiany: {sum(changes.values())}." if sum(changes.values()) else "Brak nowych zmian.")
+        elif successes:
+            self.status = f"Odświeżono {successes}/{len(KINDS)} sekcji. Sprawdź komunikaty pozostałych."
+        else:
+            self.status = "Nie pobrano nowych danych. " + ("Pokazuję ostatnią kopię." if self.tracker.initialized else "Sprawdź błędy sekcji.")
+        return self.state_json()
+
+    def read_message(self, item_id):
+        item = next((row for row in self.tracker.sections["messages"] if row["id"] == item_id), None)
+        if item is None:
+            return json.dumps({"error": "Wiadomość nie znajduje się w pobranej liście."})
+        if self.mode == "demo":
+            return json.dumps({"title": item["title"], "text": "Przykładowa treść wiadomości. Demo nie łączy się z kontem szkoły."})
+        if not self._allowed():
+            return json.dumps({"error": self.status})
+        if not self.client:
+            return json.dumps({"error": "Połącz konto, aby pobrać treść."})
+        try:
+            body = self.client.read_message(item_id)
+            item["unread"] = False
+            self.errors.pop("messages", None)
+            return json.dumps(body, ensure_ascii=False)
+        except ConnectorError as exc:
+            self.errors["messages"] = str(exc)
+            if exc.rate_limited:
+                self.retry_after = self.clock() + 3600
+            return json.dumps({"error": str(exc)})
+        except Exception:
+            return json.dumps({"error": "Nie udało się pobrać treści wiadomości."})
+
+    def read_homework(self, item_id):
+        item = next((row for row in self.tracker.sections["homework"] if row["id"] == item_id), None)
+        if item is None:
+            return json.dumps({"error": "Zadanie nie znajduje się w pobranej liście."})
+        if self.mode == "demo":
+            return json.dumps({"id": item_id, "text": "Przykładowa treść zadania: rozwiąż ćwiczenia i przygotuj odpowiedź na kolejną lekcję. Demo nie łączy się z dziennikiem."}, ensure_ascii=False)
+        if not self._allowed():
+            return json.dumps({"error": self.status})
+        if not self.client:
+            return json.dumps({"error": "Połącz konto, aby pobrać treść zadania."})
+        try:
+            body = self.client.read_homework(item_id)
+            self.errors.pop("homework", None)
+            return json.dumps({"id": item_id, "text": body["text"]}, ensure_ascii=False)
+        except ConnectorError as exc:
+            self.errors["homework"] = str(exc)
+            if exc.rate_limited:
+                self.retry_after = self.clock() + 3600
+            if exc.requires_login:
+                self.blocked.add("homework")
+            return json.dumps({"error": str(exc)})
+        except Exception:
+            return json.dumps({"error": "Nie udało się pobrać treści zadania."})
+
+    def demo(self):
+        if self.mode != "demo":
+            self.live_saved = json.loads(self.export_json())
+        self.close_client()
+        self.credentials = None
+        self.tracker = SnapshotTracker(extra_kinds=("homework",))
+        self.journal = ChangeJournal(self.tracker.year)
+        self.announcement_archives = AnnouncementArchives()
+        for kind, rows in demo_sections(include_homework=True).items():
+            self.tracker.apply(kind, rows)
+        self.journal.begin_visit(self.clock())
+        for kind in ("grades", "schedule", "homework", "announcements", "attendance", "timetable", "messages"):
+            self.journal.record(kind, self.tracker.sections[kind][0], "new", self.clock())
+        self.mode, self.errors = "demo", {}
+        self.status = "Dane demonstracyjne — bez połączenia z dziennikiem."
+        return self.state_json()
+
+    def forget(self):
+        active = self.journal.active
+        self.close_client()
+        self.tracker = SnapshotTracker(extra_kinds=("homework",))
+        self.journal = ChangeJournal(self.tracker.year)
+        self.journal.active = active
+        self.announcement_archives = AnnouncementArchives()
+        self.profile, self.credentials, self.live_saved = "", None, None
+        self.auto_login_blocked = False
+        self.mode, self.errors, self.blocked = "idle", {}, set()
+        self.status = "Usunięto lokalne dane i konto."
+        return self.state_json()
+
+
+_service = MobileService()
+def get_service():
+    return _service
