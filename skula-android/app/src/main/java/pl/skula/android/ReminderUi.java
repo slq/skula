@@ -3,7 +3,6 @@ package pl.skula.android;
 import android.app.*;
 import android.graphics.Color;
 import android.os.Build;
-import android.view.WindowManager;
 import android.widget.*;
 import org.json.*;
 import java.time.*;
@@ -86,7 +85,6 @@ public final class ReminderUi {
     }
     public void open(String id) { for(int i=0;i<rows.length();i++){JSONObject row=rows.optJSONObject(i);if(row!=null&&row.optString("id").equals(id)){details(row);return;}} toast("Przypomnienie zostało usunięte lub nie jest dostępne."); }
     public void add(JSONObject source, String kind) { editor(null, source, kind); }
-    private void secure(Dialog dialog) { if(!demo())dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); }
     private void toast(String value) { Toast.makeText(activity,value,Toast.LENGTH_LONG).show(); }
     private void details(JSONObject row) {
         LinearLayout body=column();body.setPadding(dp(20),dp(8),dp(20),dp(8));
@@ -100,7 +98,7 @@ public final class ReminderUi {
         space(body,ButtonStyles.make(activity,"Pokaż wpis",()->{if(!belongs(row)){toast("Połącz konto przypomnienia lub odpowiedni tryb demo.");return;}dialog.dismiss();showSource.accept(row,row.optString("kind"));},false));
         space(body,ButtonStyles.make(activity,"Edytuj przypomnienie",()->{dialog.dismiss();editor(row,null,row.optString("kind"));},true));
         space(body,ButtonStyles.make(activity,"Usuń przypomnienie",()->{dialog.dismiss();remove(row);},false));
-        dialog.show();secure(dialog);
+        dialog.show();
     }
     private void remove(JSONObject row) {
         ReminderAlarms.execute(()->{
@@ -164,7 +162,7 @@ public final class ReminderUi {
         CheckBox showText=new CheckBox(activity);showText.setText("Pokaż mój tekst w powiadomieniu");showText.setChecked(existing!=null&&existing.optBoolean("show_text"));space(form,showText);
         form.addView(error);
         ScrollView scroller=new ScrollView(activity);scroller.addView(form);
-        AlertDialog dialog=new AlertDialog.Builder(activity).setTitle(existing==null?"Nowe przypomnienie":"Edytuj przypomnienie").setView(scroller).setNegativeButton("Anuluj",null).setPositiveButton("Zapisz",null).create();dialog.show();secure(dialog);
+        AlertDialog dialog=new AlertDialog.Builder(activity).setTitle(existing==null?"Nowe przypomnienie":"Edytuj przypomnienie").setView(scroller).setNegativeButton("Anuluj",null).setPositiveButton("Zapisz",null).create();dialog.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
             String content=note.getText().toString().trim();long at;
             try { if(content.isEmpty()||content.codePointCount(0,content.length())>200)throw new IllegalArgumentException("Wpisz treść od 1 do 200 znaków.");at=ReminderStore.localTime(day[0],time[0],ZoneId.systemDefault());if(at<=System.currentTimeMillis())throw new IllegalArgumentException("Wybierz termin w przyszłości."); }

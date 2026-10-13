@@ -32,6 +32,6 @@ Kryteria akceptacji:
 - Zakres ogranicza się do pobranych list: m.in. do 200 wiadomości, zakresu terminarza i planu lekcji ostatniego odczytu. Nie odtwarza usuniętych wpisów z historii zmian.
 - Pełne treści wiadomości i zadań, pobierane osobnym przyciskiem, nie są trwale przechowywane ani indeksowane. Wyszukiwarka wyjaśnia ten zakres przed listą wyników. Opisy dostępne w pobranej liście, w tym treść ogłoszeń, są przeszukiwane.
 - Niepobrane sekcje i błędy odświeżenia są jawnie pokazane. Nie zastępują zachowanych wyników komunikatem, że szkolnych danych nie ma.
-- Ekran rzeczywistego konta pozostaje chroniony przed zrzutami przez FLAG_SECURE; demo wykorzystuje tylko dane fikcyjne. Hasła, identyfikatory konta i prywatne metadane spoza wpisów nie są przeszukiwane.
+- Zrzuty ekranu wyszukiwarki i szczegółów wpisów są dostępne także dla rzeczywistego konta. FLAG_SECURE chroni wyłącznie okno logowania; demo wykorzystuje tylko dane fikcyjne. Hasła, identyfikatory konta i prywatne metadane spoza wpisów nie są przeszukiwane.
 
 Od Android 0.11.0 wyszukiwanie ogłoszeń obejmuje również całe lokalne archiwum aktualnego konta, w tym poprzednie lata szkolne. Inne konta i dane demo pozostają odrębne. [Zasady](ANNOUNCEMENTS.md).

@@ -3,6 +3,8 @@ package pl.skula.android;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -77,7 +79,6 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         if (saved != null) {
             page = saved.getString("page", "overview");
             globalSource=saved.getString("globalSource","all");
@@ -344,8 +345,6 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         status.setText((mode.equals("demo") ? "DEMO · " : mode.equals("offline") ? "KOPIA LOKALNA · " : "") + state.optString("status", "Przygotowuję aplikację…"));
         refresh.setEnabled(!busy && !mode.equals("idle")); account.setEnabled(!busy);
         progress.setVisibility(busy ? View.VISIBLE : View.GONE);
-        if (mode.equals("demo")) getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-        else getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         int y = scroll.getScrollY(); renderList(); scroll.post(() -> scroll.scrollTo(0, y));
         openPendingReminder();
         if (state.optBoolean("ready") && state.optBoolean("needs_login") && (!state.optBoolean("remembered") || state.optBoolean("auto_login_blocked")) && !busy && !loginPrompted && !backupUi.importing) {
@@ -528,7 +527,6 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         dialog.setContentView(body); dialog.setOnDismissListener(d->{if(moreDialog==dialog)moreDialog=null;}); dialog.show();
         dialog.getWindow().setGravity(Gravity.BOTTOM);
         dialog.getWindow().setLayout(-1,(int)(getResources().getDisplayMetrics().heightPixels*0.75));
-        if(!state.optString("mode").equals("demo"))dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }
     private void hideKeyboard() {
         android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
@@ -802,7 +800,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         if (item.has("subtitle") || item.has("when"))
             body.addView(text(item.optString("subtitle") + " · " + DisplayData.date(item.optString("when")), 13, MUTED, false));
         if(kind.equals("announcements")&&item.optBoolean("archived"))body.addView(text("Zapisana kopia — ogłoszenia nie ma na ostatniej pobranej liście dziennika.",13,MUTED,false));
-        if (kind.equals("messages")) {
+        if (kind.equals("messages") && !item.optBoolean("body_loaded")) {
             body.addView(text("Pobranie treści może oznaczyć wiadomość jako przeczytaną w dzienniku.", 13, MUTED, false));
             Button read = button("Pobierz treść", () -> { dialog.dismiss(); repository.readMessage(item.optString("id")); }, true);
             read.setEnabled(!state.optBoolean("busy")); body.addView(read);
@@ -822,12 +820,27 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         ScrollView detailScroll = new ScrollView(this);
         TextView content = text(item.optString("details", "Brak dodatkowego opisu."), 16, INK, false); content.setTextIsSelectable(true);
         detailScroll.addView(content); body.addView(detailScroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        if (Arrays.asList("messages", "announcements", "schedule").contains(kind))
+            spaced(body, button("Kopiuj", () -> copyEntry(item), false));
         LinearLayout actions = row();
         weighted(actions, button("Otwórz w dzienniku", () -> { if (kind.equals("homework")) openHomework(item.optString("id")); else openOfficial(kind); }, false));
         weighted(actions, button("Zamknij", dialog::dismiss, false)); body.addView(actions);
         dialog.setContentView(body); dialog.show();
         dialog.getWindow().setLayout(-1, (int) (getResources().getDisplayMetrics().heightPixels * 0.85));
-        if (!state.optString("mode").equals("demo")) dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+    }
+
+    private void copyEntry(JSONObject item) {
+        String title = item.optString("title", "Szczegóły");
+        String content = title + "\nData: " + DisplayData.date(item.optString("when"))
+                + "\n\n" + item.optString("details", "Brak dodatkowego opisu.");
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            Toast.makeText(this, "Nie można uzyskać dostępu do schowka.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText("Wpis Skula", content));
+        if (android.os.Build.VERSION.SDK_INT < 33)
+            Toast.makeText(this, "Skopiowano do schowka.", Toast.LENGTH_SHORT).show();
     }
 
     private void showLogin() {
@@ -843,7 +856,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Połącz konto Synergia").setView(body)
                 .setNegativeButton("Anuluj", null).setNeutralButton("Demo", (d, w) -> repository.demo()).setPositiveButton("Połącz", null).create();
         loginDialog = dialog; dialog.setOnDismissListener(d -> { password.setText(""); loginDialog = null; });
-        dialog.show(); dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); dialog.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String user = login.getText().toString().trim(), secret = password.getText().toString();
             if (user.isEmpty()) { login.setError("Wpisz login"); return; }
@@ -855,7 +868,13 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
 
     @Override public void onMessage(JSONObject content) {
         if (content.has("error")) new AlertDialog.Builder(this).setTitle("Nie pobrano treści").setMessage(content.optString("error")).setPositiveButton("OK", null).show();
-        else showText(content.optString("title", "Wiadomość"), content.optString("text", "Brak treści."));
+        else {
+            try {
+                JSONObject item = new JSONObject(content.toString());
+                item.put("details", content.optString("text", "Brak treści.")).put("body_loaded", true);
+                details(item, "messages");
+            } catch (org.json.JSONException ignored) { showText("Wiadomość", "Nie można wyświetlić pobranej treści."); }
+        }
     }
     @Override public void onHomework(JSONObject content) {
         if (content.has("error")) { showText("Nie pobrano treści zadania", content.optString("error")); return; }

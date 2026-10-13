@@ -295,7 +295,8 @@ class MobileService:
         if item is None:
             return json.dumps({"error": "Wiadomość nie znajduje się w pobranej liście."})
         if self.mode == "demo":
-            return json.dumps({"title": item["title"], "text": "Przykładowa treść wiadomości. Demo nie łączy się z kontem szkoły."})
+            return json.dumps({"id": item_id, "title": item["title"], "when": item.get("when", ""), "subtitle": item.get("subtitle", ""),
+                               "text": "Przykładowa treść wiadomości. Demo nie łączy się z kontem szkoły."}, ensure_ascii=False)
         if not self._allowed():
             return json.dumps({"error": self.status})
         if not self.client:
@@ -304,7 +305,7 @@ class MobileService:
             body = self.client.read_message(item_id)
             item["unread"] = False
             self.errors.pop("messages", None)
-            return json.dumps(body, ensure_ascii=False)
+            return json.dumps({**body, "id": item_id, "when": item.get("when", ""), "subtitle": item.get("subtitle", "")}, ensure_ascii=False)
         except ConnectorError as exc:
             self.errors["messages"] = str(exc)
             if exc.rate_limited:

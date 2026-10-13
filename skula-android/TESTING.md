@@ -2,6 +2,14 @@
 
 Weryfikacja lokalna: 8 października 2026. Telefon docelowy: Samsung Galaxy S10, Android 12, One UI 4.1. Nową wersję sprawdzono na emulatorze Androida 12, API 31, Google APIs, x86_64; fizyczny S10 nie był podłączony.
 
+## Zrzuty ekranu i kopiowanie — 13 października 2026
+
+Zrzuty są dostępne poza oknem logowania, także dla kopii offline i w szczegółach wpisów. Przycisk **Kopiuj** w ogłoszeniach, wiadomościach i terminarzu zapisuje tytuł, datę oraz widoczną treść. Pełna pobrana wiadomość zachowuje datę i metadane; treść nadal nie trafia do zaszyfrowanej kopii danych.
+
+Weryfikacja lokalna: Python **49/49**, Java **25/25**, nowe testy Android **3/3** (`CopyAndScreenshotUiTest`) na izolowanym emulatorze Androida 12 / API 31. Sprawdzono dokładną zawartość schowka dla trzech sekcji, polskie znaki i ponad 4000 znaków tekstu, pełną wiadomość zamiast podglądu, systemowy zrzut poza logowaniem i flagę ochrony okna logowania. Układ przycisku sprawdzono wizualnie przy 320×640. Wyłącznie dane fikcyjne; fizycznego telefonu nie testowano.
+
+Kompilacja debug, APK testowego i release: poprawna. Lint debug: **0 błędów, 23 ostrzeżenia**. Kontrola wspólnych źródeł i licencji: poprawna. Osobny plik do ręcznej instalacji: `artifacts/Skula-android-zrzuty-kopiowanie.apk` i SHA-256. Pakiet `pl.skula.android`, versionCode **21**, versionName **0.13.1**, bez debuggable; podpis zgodny z dotychczasową instalacją. Numer wersji pozostawiono bez zmian i nie publikowano wydania.
+
 ## Wydanie 0.13.1 — 13 października 2026
 
 APK release: pakiet `pl.skula.android`, versionCode **21**, versionName **0.13.1**, bez debuggable. Podpis SHA-256 certyfikatu zgodny z dotychczasowymi instalacjami: `0b022decbecb6f36fa5279f98d4451165f3ade0b3dca2d50019e5039a10217fe`. Kontrola wspólnych źródeł i licencji: poprawna. Kompilacja release, **25/25** testów jednostkowych Java i lint debug zakończone poprawnie. Test polityki aktualizacji obejmuje rzeczywisty adres slq/skula i odrzucenie starego źródła w nowej wersji.
