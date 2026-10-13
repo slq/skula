@@ -5,7 +5,7 @@ import java.util.*;
 
 /** Fixed publisher, HTTPS only; no dziennik credentials or arbitrary update URLs. */
 public final class UpdatePolicy {
-    public static final String REPOSITORY="slq/skula-home";
+    public static final String REPOSITORY="slq/skula";
     public static final String MANIFEST_URL="https://github.com/"+REPOSITORY+"/releases/latest/download/skula-android-update.json";
     public static final long CHECK_INTERVAL=24*60*60*1000L, MAX_APK_BYTES=150*1024*1024L;
     public static final int MAX_MANIFEST_BYTES=65536;
@@ -15,6 +15,6 @@ public final class UpdatePolicy {
         try{URI u=new URI(value);String h=u.getHost();return "https".equalsIgnoreCase(u.getScheme())&&u.getUserInfo()==null&&u.getFragment()==null&&(u.getPort()==-1||u.getPort()==443)&&h!=null&&Arrays.asList("github.com","release-assets.githubusercontent.com","objects.githubusercontent.com","github-releases.githubusercontent.com").contains(h.toLowerCase(Locale.ROOT));}catch(Exception e){return false;}
     }
     public static boolean apkUrl(String value){
-        try{URI u=new URI(value);return safeHop(value)&&"github.com".equalsIgnoreCase(u.getHost())&&u.getQuery()==null&&u.getRawPath().matches("/slq/skula-home/releases/download/android-v[0-9]+\\.[0-9]+\\.[0-9]+/Skula-android-[0-9]+\\.[0-9]+\\.[0-9]+\\.apk");}catch(Exception e){return false;}
+        try{URI u=new URI(value);return safeHop(value)&&"github.com".equalsIgnoreCase(u.getHost())&&u.getQuery()==null&&u.getRawPath().matches("/slq/skula/releases/download/android-v[0-9]+\\.[0-9]+\\.[0-9]+/Skula-android-[0-9]+\\.[0-9]+\\.[0-9]+\\.apk");}catch(Exception e){return false;}
     }
 }

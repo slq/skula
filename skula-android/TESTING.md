@@ -2,6 +2,20 @@
 
 Weryfikacja lokalna: 8 października 2026. Telefon docelowy: Samsung Galaxy S10, Android 12, One UI 4.1. Nową wersję sprawdzono na emulatorze Androida 12, API 31, Google APIs, x86_64; fizyczny S10 nie był podłączony.
 
+## Wydanie 0.13.1 — 13 października 2026
+
+APK release: pakiet `pl.skula.android`, versionCode **21**, versionName **0.13.1**, bez debuggable. Podpis SHA-256 certyfikatu zgodny z dotychczasowymi instalacjami: `0b022decbecb6f36fa5279f98d4451165f3ade0b3dca2d50019e5039a10217fe`. Kontrola wspólnych źródeł i licencji: poprawna. Kompilacja release, **25/25** testów jednostkowych Java i lint debug zakończone poprawnie. Test polityki aktualizacji obejmuje rzeczywisty adres slq/skula i odrzucenie starego źródła w nowej wersji.
+
+Źródło przyszłych aktualizacji zmieniono na slq/skula. Osobne metadane wydania zgodności pod slq/skula-home wskazują ten sam podpisany APK 0.13.1 pod adresem akceptowanym przez Skulę 0.13.0. Repozytorium zgodności służy wyłącznie do przejścia na aktualny adres.
+
+## Ręczne odświeżanie — 13 października 2026
+
+Limit 5 minut dotyczy automatycznych odczytów; przycisk **Odśwież** omija tę przerwę. Ręczna próba przesuwa termin następnego automatycznego odczytu. Opis w Ustawieniach i dokumentacji odpowiada temu zachowaniu.
+
+`ManualRefreshTest` odtworzył błąd przed poprawką: kliknięcie w trakcie przerwy nie pobierało żadnej z siedmiu sekcji. Po poprawce test na izolowanym emulatorze Androida 12 / API 31 potwierdził dwa kolejne ręczne pobrania, blokadę dodatkowej operacji podczas pobierania, zachowanie limitu dla foreground i tła oraz respektowanie blokady HTTP 429. Test używa wyłącznie fikcyjnego konta i odpowiedzi, z wyłączoną przerwą nocną.
+
+Kompilacja debug i APK testowego: poprawna. Testy jednostkowe Java: **25/25**. Testy Android: **5/5** (`ManualRefreshTest`, `BackgroundNotificationTest` i trzy scenariusze `BackgroundSyncTest`). Lint debug: **0 błędów, 23 ostrzeżenia**. Fizycznego telefonu nie testowano.
+
 ## Aktualizator APK — 0.12.0
 
 Weryfikacja 8 października 2026: produkcyjne APK 0.12.0 zbudowane i podpisane dotychczasowym certyfikatem (SHA-256 `0b022decbecb6f36fa5279f98d4451165f3ade0b3dca2d50019e5039a10217fe`), debuggable wyłączone. Java **25**, natywne Android API 31 **29** różnych scenariuszy — **54 zaliczone testy**. Lint debug: **0 błędów, 23 ostrzeżenia** (nowe ostrzeżenie dotyczy nieprzeniesionego do resources tekstu). Wspólne źródła i licencje zgodne; warstwa Python nie zmieniała się. Fizycznego S10 nie testowano.

@@ -2,7 +2,7 @@
 
 ## Pobieranie danych i focus
 
-Aplikacja próbuje pobrać dane po otwarciu, powrocie i ponownym uzyskaniu focusu. Pobiera je także podczas aktywności około co 5 minut. Wszystkie te wejścia oraz przycisk Odśwież korzystają z jednej przerwy: **minimum 5 minut między próbami pobrania danych**. Przerwa dotyczy też błędnego odczytu i jest zapisana lokalnie, więc restart procesu jej nie omija. W czasie przerwy aplikacja pokazuje ostatnią kopię.
+Aplikacja próbuje pobrać dane po otwarciu, powrocie i ponownym uzyskaniu focusu. Pobiera je także podczas aktywności około co 5 minut. Automatyczne wejścia korzystają z jednej przerwy: **minimum 5 minut od ostatniej próby pobrania danych**. Przerwa dotyczy też błędnego odczytu i jest zapisana lokalnie, więc restart procesu jej nie omija. W czasie przerwy aplikacja pokazuje ostatnią kopię. Przycisk **Odśwież** omija tę przerwę i pozwala od razu ponowić pobranie, także wielokrotnie po zakończeniu poprzedniej operacji. Ręczna próba przesuwa następny automatyczny odczyt o 5 minut. Podczas pobierania przycisk jest wyłączony, aby uniknąć równoległych operacji.
 
 Pierwsze logowanie pobiera dane, jeśli przerwa nie obowiązuje. Ręczne ponowne logowanie w czasie przerwy może połączyć sesję; odczyt danych czeka do jej końca. Treść jednej wiadomości nadal jest pobierana osobno na wyraźne żądanie. HTTP 429 ma nadrzędną przerwę co najmniej godziny, także dla logowania i treści wiadomości.
 
@@ -31,7 +31,7 @@ Zamknięcie okna i zakończenie procesu przez system są obsługiwane. **Wymuś 
 
 ## Odnawianie sesji zapamiętanego konta (0.5.1)
 
-Wygaśnięcie istniejącej sesji nie wyłącza pobierania w tle i nie blokuje automatycznego logowania, jeśli konto jest zapamiętane. Nie ma ponawiania odczytu w tej samej operacji: kolejna dozwolona próba może połączyć konto i pobrać dane. Obowiązuje wspólne minimum 5 minut; w tle termin wybiera JobScheduler, a przerwa nocna i blokada HTTP 429 nadal mają zastosowanie. Poprzednia kopia i historia zmian są zachowane, więc odzyskanie tej samej zawartości nie tworzy powtórnych alertów.
+Wygaśnięcie istniejącej sesji nie wyłącza pobierania w tle i nie blokuje automatycznego logowania, jeśli konto jest zapamiętane. Nie ma ponawiania odczytu w tej samej operacji: kolejna dozwolona próba może połączyć konto i pobrać dane. Przy automatycznych próbach obowiązuje wspólne minimum 5 minut; w tle termin wybiera JobScheduler, a przerwa nocna i blokada HTTP 429 nadal mają zastosowanie. Poprzednia kopia i historia zmian są zachowane, więc odzyskanie tej samej zawartości nie tworzy powtórnych alertów.
 
 Jeżeli logowanie zapisanymi danymi zostanie odrzucone albo nowo utworzona sesja również wymaga logowania, aplikacja wstrzymuje kolejne automatyczne próby. Wtedy połącz konto ręcznie i ponownie włącz pobieranie w tle, jeśli zostało wyłączone. Bez opcji **Zapamiętaj konto na tym telefonie** ponowne logowanie po zakończeniu procesu lub utracie sesji jest wymagane.
 

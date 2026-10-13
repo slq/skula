@@ -4,8 +4,10 @@ import static org.junit.Assert.*;
 
 public class UpdatePolicyTest {
     @Test public void updateUrlIsBoundToOurRepositoryAndReleaseApk(){
-        assertTrue(UpdatePolicy.apkUrl("https://github.com/slq/skula-home/releases/download/android-v0.12.1/Skula-android-0.12.1.apk"));
-        for(String url:new String[]{"http://github.com/slq/skula-home/releases/download/android-v0.12.1/Skula-android-0.12.1.apk","https://github.com/evil/skula-home/releases/download/android-v0.12.1/Skula-android-0.12.1.apk","https://github.com/slq/skula-home/releases/download/android-v0.12.1/../malicious.apk","https://github.com/slq/skula-home/releases/download/android-v0.12.1/Skula-android-0.12.1.apk?token=secret"})assertFalse(url,UpdatePolicy.apkUrl(url));
+        assertEquals("https://github.com/slq/skula/releases/latest/download/skula-android-update.json", UpdatePolicy.MANIFEST_URL);
+        assertFalse(UpdatePolicy.apkUrl("https://github.com/slq/skula-home/releases/download/android-v0.13.1/Skula-android-0.13.1.apk"));
+        assertTrue(UpdatePolicy.apkUrl("https://github.com/slq/skula/releases/download/android-v0.12.1/Skula-android-0.12.1.apk"));
+        for(String url:new String[]{"http://github.com/slq/skula/releases/download/android-v0.12.1/Skula-android-0.12.1.apk","https://github.com/evil/skula-home/releases/download/android-v0.12.1/Skula-android-0.12.1.apk","https://github.com/slq/skula/releases/download/android-v0.12.1/../malicious.apk","https://github.com/slq/skula/releases/download/android-v0.12.1/Skula-android-0.12.1.apk?token=secret"})assertFalse(url,UpdatePolicy.apkUrl(url));
     }
     @Test public void redirectsRejectCleartextCredentialsPortsAndLookalikeHosts(){
         assertTrue(UpdatePolicy.safeHop("https://release-assets.githubusercontent.com/a?sig=temporary"));

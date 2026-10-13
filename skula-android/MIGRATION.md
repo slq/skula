@@ -19,4 +19,4 @@ Nowe instalacje używają %LOCALAPPDATA%/Skula. Wykrywanie istniejącego starego
 
 ## GitHub
 
-Konfiguracja nowych wydań wskazuje slq/skula-home. Właściciel zmieni nazwę repozytorium osobno. Następnie należy opublikować nowy APK oraz skula-android-update.json. Obecne stare wydania i lokalne archiwa nie są przepisywane ani usuwane.
+Skula 0.13.1 pobiera kolejne aktualizacje z slq/skula. Dla już zainstalowanej Skuli 0.13.0 wydanie przejściowe udostępniono pod adresem slq/skula-home, którego oczekuje jej aktualizator. Pakiet i podpis 0.13.1 są zgodne ze Skulą 0.13.0, więc można ją zaktualizować bez ponownego importu JSON. Wydania LibrusApp pozostają osobnymi instalacjami.

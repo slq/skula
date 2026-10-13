@@ -1,7 +1,7 @@
-param([string]$Version = '0.13.0', [switch]$Draft)
+param([string]$Version = '0.13.1', [switch]$Draft)
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Nieprawidlowa wersja.' }
-if (-not $env:GITHUB_TOKEN) { throw 'Ustaw GITHUB_TOKEN z prawem zapisu Contents do slq/skula-home. Nie wklejaj tokenu do kodu ani czatu.' }
+if (-not $env:GITHUB_TOKEN) { throw 'Ustaw GITHUB_TOKEN z prawem zapisu Contents do slq/skula. Nie wklejaj tokenu do kodu ani czatu.' }
 $artifactDir = Join-Path $PSScriptRoot 'artifacts'
 $names = @("Skula-android-$Version.apk", 'skula-android-update.json', "Skula-android-$Version-source.zip")
 foreach ($name in $names) { if (-not (Test-Path -LiteralPath (Join-Path $artifactDir $name))) { throw "Brak pliku $name. Uruchom Build.ps1 -Release." } }
@@ -11,9 +11,9 @@ $hash = (Get-FileHash -LiteralPath (Join-Path $artifactDir $names[0]) -Algorithm
 if ($hash -ne $manifest.sha256) { throw 'Suma APK nie pasuje do metadanych.' }
 $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28'; 'User-Agent' = 'Skula-Publisher' }
 $tag = "android-v$Version"
-$release = Invoke-RestMethod -Method Post -Uri 'https://api.github.com/repos/slq/skula-home/releases' -Headers $headers -ContentType 'application/json; charset=utf-8' -Body (@{tag_name=$tag; name="Skula Android $Version"; body=$manifest.notes; draft=$true; prerelease=$false} | ConvertTo-Json)
+$release = Invoke-RestMethod -Method Post -Uri 'https://api.github.com/repos/slq/skula/releases' -Headers $headers -ContentType 'application/json; charset=utf-8' -Body (@{tag_name=$tag; name="Skula Android $Version"; body=$manifest.notes; draft=$true; prerelease=$false} | ConvertTo-Json)
 $uploadBase = $release.upload_url -replace '\{.*$',''
-if (-not $uploadBase.StartsWith('https://uploads.github.com/repos/slq/skula-home/releases/')) { throw 'Nieoczekiwany adres uploadu.' }
+if (-not $uploadBase.StartsWith('https://uploads.github.com/repos/slq/skula/releases/')) { throw 'Nieoczekiwany adres uploadu.' }
 foreach ($name in $names) {
     $type = if ($name.EndsWith('.json')) { 'application/json' } elseif ($name.EndsWith('.apk')) { 'application/vnd.android.package-archive' } else { 'application/zip' }
     $encoded = [Uri]::EscapeDataString($name)

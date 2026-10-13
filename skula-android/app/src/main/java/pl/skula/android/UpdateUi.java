@@ -15,7 +15,7 @@ public final class UpdateUi {
     private TextView text(String value,int size){TextView v=new TextView(activity);v.setText(value);v.setTextSize(size);v.setTextColor(0xff183047);v.setPadding(0,4,0,8);return v;}
     public void render(LinearLayout parent){root=parent;parent.addView(text("Aktualizacje aplikacji",19));parent.addView(text("Zainstalowana wersja: "+UpdateManager.installedName(activity),14));
         Switch automatic=new Switch(activity);automatic.setText("Sprawdzaj nową wersję raz dziennie");automatic.setChecked(manager.automatic());automatic.setOnCheckedChangeListener((b,value)->manager.automatic(value));parent.addView(automatic);
-        parent.addView(text("Źródło: GitHub · slq/skula-home. Pobieranie APK zaczyna się dopiero po wybraniu przycisku. Aktualizacja zachowuje lokalne dane.",13));status=text("",14);notes=text("",14);parent.addView(status);parent.addView(notes);
+        parent.addView(text("Źródło: GitHub · slq/skula. Pobieranie APK zaczyna się dopiero po wybraniu przycisku. Aktualizacja zachowuje lokalne dane.",13));status=text("",14);notes=text("",14);parent.addView(status);parent.addView(notes);
         progress=new ProgressBar(activity,null,android.R.attr.progressBarStyleHorizontal);parent.addView(progress);
         check=ButtonStyles.make(activity,"Sprawdź aktualizacje",()->manager.check(true,null),false);parent.addView(check);
         download=ButtonStyles.make(activity,"Pobierz aktualizację",manager::download,true);parent.addView(download);

@@ -2,7 +2,7 @@ package pl.skula.android;
 import android.content.Context;
 import android.os.SystemClock;
 
-/** One cooldown for foreground, focus, manual refresh, background and process restarts. */
+/** Automatic reads wait five minutes after any attempt, including a manual refresh. */
 public final class SyncPolicy {
     public static final long INTERVAL_MS = 5 * 60 * 1000;
     private static long lastElapsed = -1;

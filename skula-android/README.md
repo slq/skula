@@ -1,13 +1,13 @@
 # Skula Android
 
-Wersja mobilna **0.13.0** projektu Skula. Nieoficjalny klient dziennika Synergia, przeznaczony do instalacji APK przez USB. Nie wymaga publikacji w Google Play, serwera ani przekazania hasła innemu pośrednikowi.
+Wersja mobilna **0.13.1** projektu Skula. Nieoficjalny klient dziennika Synergia, przeznaczony do instalacji APK przez USB. Nie wymaga publikacji w Google Play, serwera ani przekazania hasła innemu pośrednikowi.
 
 Telefon referencyjny: **Samsung Galaxy S10, Android 12, One UI 4.1**. Minimalne wymagania: Android 8.0 (API 26), procesor 64-bit ARM; pakiet zawiera też x86_64 do testów emulatora.
 
 ## Funkcje
 
 - Login i hasło konta Synergia otrzymane ze szkoły; dobrowolne zapamiętanie konta.
-- Pobieranie najnowszych danych po połączeniu, otwarciu lub powrocie do aplikacji, nie częściej niż co 5 minut. Limit obejmuje focus, powrót, ręczne odświeżenie i restart procesu.
+- Automatyczne pobieranie najnowszych danych po otwarciu lub powrocie do aplikacji, nie częściej niż co 5 minut. Limit obejmuje focus, powrót i restart procesu. Przycisk **Odśwież** pobiera dane od razu, również w trakcie tej przerwy.
 - Sekcja „Od ostatniego wejścia” na Starcie: konkretne nowe i zaktualizowane wpisy wszystkich siedmiu paneli, filtr źródła, rozwijanie listy i szczegóły jednym dotknięciem; zapis zmian z tła i między odczytami.
 - Start „Dzisiaj / Jutro”: lekcje, zadania z terminem na wybrany dzień, wydarzenia i zaplanowane własne przypomnienia; skróty do wiadomości i ocen oraz ostatnie oceny.
 - Stałe dolne menu: Start, Kalendarz, Ogłoszenia, Wiadomości i Więcej. Pozostałe panele i Ustawienia pod Więcej.
@@ -61,7 +61,7 @@ Marka, nazwy folderów i pakiety własnego kodu zostały zmienione na Skula. Zac
 
 ## Instalacja na S10 przez USB
 
-Gotowy plik po kompilacji z `Build.ps1 -Release`: `artifacts/Skula-android-0.13.0.apk` (około 39 MiB). Jest to APK produkcyjne (bez debuggable), podpisane lokalnym certyfikatem. Pakiet pl.skula.android tworzy osobną instalację; migracja danych odbywa się przez JSON. Aktualizacje bez utraty danych wymagają tego samego klucza podpisu.
+Gotowy plik po kompilacji z `Build.ps1 -Release`: `artifacts/Skula-android-0.13.1.apk` (około 39 MiB). Jest to APK produkcyjne (bez debuggable), podpisane lokalnym certyfikatem. Pakiet pl.skula.android tworzy osobną instalację; migracja danych odbywa się przez JSON. Aktualizacje bez utraty danych wymagają tego samego klucza podpisu.
 
 1. Na telefonie otwórz **Ustawienia → Telefon — informacje → Informacje o oprogramowaniu** i naciśnij **Numer kompilacji** siedem razy, aby włączyć Opcje programisty.
 2. W **Opcjach programisty** włącz **Debugowanie USB**.
@@ -77,7 +77,7 @@ Skrypt wybiera jeden fizyczny telefon, instaluje APK z opcją aktualizacji i otw
 Jeśli używasz innego SDK lub pliku:
 
 ```powershell
-.\Install-USB.ps1 -SdkPath 'C:/Android/Sdk' -ApkPath 'C:/Downloads/Skula-android-0.13.0.apk'
+.\Install-USB.ps1 -SdkPath 'C:/Android/Sdk' -ApkPath 'C:/Downloads/Skula-android-0.13.1.apk'
 ```
 
 Wymagania i działanie ADB opisuje [oficjalna instrukcja uruchamiania na urządzeniu](https://developer.android.com/studio/run/device). Google Play nie uczestniczy w tej instalacji.
@@ -90,7 +90,7 @@ Wymagania i działanie ADB opisuje [oficjalna instrukcja uruchamiania na urządz
 4. Na ekranie Start wybierz **Dzisiaj** lub **Jutro**. Używaj dolnego menu; Szukaj, Oceny, Zadania domowe, Terminarz, Frekwencja, Plan lekcji, Przypomnienia i Ustawienia znajdziesz pod **Więcej**. Dotknij wpisu, żeby otworzyć szczegóły. W Wiadomościach osobno wybierz **Pobierz treść**.
 5. W Ustawieniach możesz zmienić konto, uruchomić demo, włączyć powiadomienia i odczyt w tle albo usunąć lokalne dane i przypomnienia.
 
-Przy aktywnej sesji powrót lub uzyskanie focusu uruchamia odczyt, jeżeli minęło 5 minut od ostatniej próby. Otwarta aplikacja odświeża się co około 5 minut. Czas ostatniej próby jest zapisany lokalnie, więc restart nie omija limitu. Ręczne logowanie w trakcie przerwy może połączyć sesję; samo pobranie danych czeka na koniec przerwy. Bez zapamiętanego hasła po zakończeniu procesu potrzebne jest ponowne logowanie; zapisana kopia nadal jest dostępna. Po HTTP 429 pobieranie jest blokowane na co najmniej godzinę, także dla logowania i treści wiadomości.
+Przy aktywnej sesji powrót lub uzyskanie focusu uruchamia odczyt, jeżeli minęło 5 minut od ostatniej próby. Otwarta aplikacja odświeża się co około 5 minut. Czas ostatniej próby jest zapisany lokalnie, więc restart nie omija limitu automatycznych odczytów. Przycisk **Odśwież** omija przerwę 5 minut i przesuwa następną automatyczną próbę o 5 minut. Ręczne logowanie w trakcie przerwy może połączyć sesję; samo pobranie danych czeka na koniec przerwy. Bez zapamiętanego hasła po zakończeniu procesu potrzebne jest ponowne logowanie; zapisana kopia nadal jest dostępna. Po HTTP 429 pobieranie jest blokowane na co najmniej godzinę, także dla logowania i treści wiadomości.
 
 ## Dane i prywatność
 
@@ -128,7 +128,7 @@ SDK i host Python są potrzebne tylko do budowy, nie na telefonie. Dane telefonu
 | `ReminderStore.java`, `ReminderUi.java`, `ReminderAlarms.java` | Trwałe przypomnienia, formularze i alarmy |
 | `ReminderReceiver.java` | Wykonanie alarmów i ich odtwarzanie po restarcie |
 | `NotificationHub.java`, `BackgroundSync.java`, `SyncJobService.java` | Kanały powiadomień i opcjonalny JobScheduler |
-| `SyncPolicy.java` | Wspólny limit pobierania co 5 minut |
+| `SyncPolicy.java` | Limit automatycznego pobierania co 5 minut |
 | `ButtonStyles.java` | Płaskie przyciski, ripple i stan wyłączenia |
 | `app/src/main/python/mobile_bridge.py` | Mobilne logowanie, odczyty, cache i obsługa błędów |
 | `app/src/main/python/skula_shared/` | Kopie adaptera i mechanizmu porównań desktopu |

@@ -18,8 +18,8 @@ if ($Release) { $assembleTask = ":app:assembleRelease" } else { $assembleTask = 
 & ./gradlew.bat "-PbuildPython=$PythonPath" '-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8' $assembleTask :app:testDebugUnitTest :app:lintDebug --console=plain
 if ($LASTEXITCODE -ne 0) { throw 'Kompilacja lub weryfikacja nie powiodla sie.' }
 New-Item -ItemType Directory -Force -Path artifacts | Out-Null
-if ($Release) { $builtApk = 'app/build/outputs/apk/release/app-release.apk'; $artifactName = 'Skula-android-0.13.0.apk' }
-else { $builtApk = 'app/build/outputs/apk/debug/app-debug.apk'; $artifactName = 'Skula-android-0.13.0-debug.apk' }
+if ($Release) { $builtApk = 'app/build/outputs/apk/release/app-release.apk'; $artifactName = 'Skula-android-0.13.1.apk' }
+else { $builtApk = 'app/build/outputs/apk/debug/app-debug.apk'; $artifactName = 'Skula-android-0.13.1-debug.apk' }
 $destination = Join-Path (Join-Path $PSScriptRoot 'artifacts') $artifactName
 Copy-Item -LiteralPath $builtApk -Destination $destination
 $hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLower()

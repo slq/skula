@@ -267,7 +267,7 @@ class MobileService:
                     else:
                         self.close_client()
                         # An existing session may expire while credentials remain valid.
-                        # Retry only on the next scheduled attempt (Java enforces 5 min).
+                        # Retry on the next attempt (Java limits automatic reads to 5 min).
                         # A failed fresh session stops recovery to avoid a login loop.
                         self.auto_login_blocked = after_login or not bool(self.credentials)
                         break

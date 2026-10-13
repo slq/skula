@@ -711,7 +711,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
                 .setNegativeButton("Anuluj", null).setPositiveButton("Usuń", (d, w) -> { repository.forget(); foreground.postDelayed(()->{reloadReminders();homeworkStatus.reload();}, 1000); }).show(), false));
         backupUi.render(card());
         LinearLayout info = card(); info.addView(text("Odświeżanie", 19, INK, true));
-        info.addView(text("Najnowsze dane pobierane są po otwarciu lub powrocie do aplikacji przy aktywnej sesji albo zapamiętanym koncie. Kolejna próba najwcześniej po 5 minutach, także po ponownym uzyskaniu focusu. Otwarta aplikacja sprawdza dane co około 5 minut. Bez zapamiętanego hasła po zakończeniu procesu zaloguj się ponownie.", 15, MUTED, false));
+        info.addView(text("Najnowsze dane pobierane są po otwarciu lub powrocie do aplikacji przy aktywnej sesji albo zapamiętanym koncie. Kolejna automatyczna próba najwcześniej po 5 minutach, także po ponownym uzyskaniu focusu. Otwarta aplikacja sprawdza dane co około 5 minut. Przyciskiem Odśwież możesz pobrać dane od razu, bez czekania na tę przerwę. Bez zapamiętanego hasła po zakończeniu procesu zaloguj się ponownie.", 15, MUTED, false));
         info.addView(text("Własne przypomnienia działają offline i po zamknięciu aplikacji. Dane, przypomnienia i opcjonalne hasło są szyfrowane kluczem Android Keystore; kopie zapasowe systemu są wyłączone.", 14, MUTED, false));
         updateUi.render(card());
         notificationSettings();

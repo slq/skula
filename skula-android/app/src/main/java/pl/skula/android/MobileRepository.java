@@ -111,26 +111,23 @@ public final class MobileRepository {
         worker.execute(()->{if(service!=null)service.callAttr("end_visit");});
     }
 
-    public void open() {
-        if (!focused && BackgroundSync.nightPaused(context)) return;
-        if (busy || (initialized && SyncPolicy.remaining(context) > 0)) return;
+    public void open() { open(false); }
+
+    private void open(boolean manual) {
+        if (!manual && !focused && BackgroundSync.nightPaused(context)) return;
+        if (busy || (!manual && initialized && SyncPolicy.remaining(context) > 0)) return;
         submit(() -> {
-            if (!focused && BackgroundSync.nightPaused(context)) return;
+            if (!manual && !focused && BackgroundSync.nightPaused(context)) return;
             JSONObject before = new JSONObject(service.callAttr("state_json").toString());
             if (before.optString("mode").equals("demo") || (!before.optBoolean("connected") && !before.optBoolean("remembered"))) return;
-            if (!SyncPolicy.begin(context)) return;
+            // Manual reads bypass the cooldown but postpone the next automatic read.
+            if (manual) SyncPolicy.record(context);
+            else if (!SyncPolicy.begin(context)) return;
             service.callAttr("open"); finishSync();
         });
     }
 
-    public void refresh() {
-        if (busy) return;
-        if (SyncPolicy.remaining(context) > 0) {
-            operationError = "Dane pobierane są nie częściej niż co 5 minut. Poczekaj do końca przerwy.";
-            dispatch(); return;
-        }
-        open();
-    }
+    public void refresh() { open(true); }
 
     public void connect(String login, String password, boolean remember) {
         GoogleCalendarSync.demo(false);

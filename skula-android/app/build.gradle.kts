@@ -9,8 +9,8 @@ android {
         applicationId = "pl.skula.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = providers.gradleProperty("skulaVersionCode").orElse("20").get().toInt()
-        versionName = providers.gradleProperty("skulaVersionName").orElse("0.13.0").get()
+        versionCode = providers.gradleProperty("skulaVersionCode").orElse("21").get().toInt()
+        versionName = providers.gradleProperty("skulaVersionName").orElse("0.13.1").get()
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

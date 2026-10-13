@@ -2,15 +2,15 @@
 
 Repozytorium aplikacji **Skula** do konta dziennika Synergia: wersji desktopowej dla Windows oraz mobilnej dla Androida. Obie pokazują dane dziennika i przechowują zaszyfrowaną kopię na urządzeniu.
 
-Projekt jest niezależnym, nieoficjalnym klientem. Nie jest powiązany z producentem dziennika. Wersja desktopowa: **0.1.1**, Android: **0.13.0**. Status: prototypy rozwijane i sprawdzane lokalnie.
+Projekt jest niezależnym, nieoficjalnym klientem. Nie jest powiązany z producentem dziennika. Wersja desktopowa: **0.1.1**, Android: **0.13.1**. Status: prototypy rozwijane i sprawdzane lokalnie.
 
 ## Zmiana nazwy i migracja
 
-Od 0.13.0 aplikacja nazywa się **Skula**, a pakiet Androida to pl.skula.android. To nowa aplikacja dla Androida: najpierw wyeksportuj JSON w poprzedniej wersji 0.12.1, zainstaluj Skulę obok niej i zaimportuj kopię. [Instrukcja migracji](skula-android/MIGRATION.md). Aktualizator Skuli oczekuje przyszłego repozytorium slq/skula-home; zadziała po jego zmianie nazwy i publikacji nowych plików.
+Od 0.13.0 aplikacja nazywa się **Skula**, a pakiet Androida to pl.skula.android. To nowa aplikacja dla Androida: najpierw wyeksportuj JSON w poprzedniej wersji 0.12.1, zainstaluj Skulę obok niej i zaimportuj kopię. [Instrukcja migracji](skula-android/MIGRATION.md). Od 0.13.1 aktualizator Skuli pobiera wydania z repozytorium slq/skula. Dla Skuli 0.13.0 udostępniono wydanie przejściowe pod dawnym adresem slq/skula-home.
 
 ## Możliwości
 
-Repozytorium zawiera dwie aplikacje: [Skula dla Windows](skula-app/README.md) i [Skula dla Androida](skula-android/README.md). Wersja Android ma APK do instalacji przez USB, z logowaniem, odczytem danych po otwarciu, limitem 5 minut, lokalnymi przypomnieniami, zadaniami domowymi i opcjonalnymi powiadomieniami. Od 0.12.0 ma wbudowany aktualizator APK z GitHub Releases, opis zmian i instalację z potwierdzeniem Androida. Od 0.11.0 zachowuje pobrane ogłoszenia w zaszyfrowanym archiwum konta, także po ich zniknięciu z dziennika i zmianie roku. Od 0.10.0 ma wspólną wyszukiwarkę wszystkich pobranych sekcji i własnych przypomnień, dostępną ze Startu i Więcej. Od 0.9.0 pokazuje na Starcie nowe i zmienione wpisy od poprzedniego wejścia, także pobrane w tle. Od 0.8.0 pozwala oznaczać zadania jako zrobione i cofać ten lokalny status. Od 0.7.0 ma ekran Start „Dzisiaj / Jutro” i dolne menu z pozostałymi panelami pod Więcej. Jej [zakres pierwszej wersji](skula-android/MVP_SCOPE.md) opisuje adaptację wymagań desktopu.
+Repozytorium zawiera dwie aplikacje: [Skula dla Windows](skula-app/README.md) i [Skula dla Androida](skula-android/README.md). Wersja Android ma APK do instalacji przez USB, z logowaniem, odczytem danych po otwarciu, limitem 5 minut dla automatycznych odczytów i ręcznym odświeżaniem bez tej przerwy, lokalnymi przypomnieniami, zadaniami domowymi i opcjonalnymi powiadomieniami. Od 0.12.0 ma wbudowany aktualizator APK z GitHub Releases, opis zmian i instalację z potwierdzeniem Androida. Od 0.11.0 zachowuje pobrane ogłoszenia w zaszyfrowanym archiwum konta, także po ich zniknięciu z dziennika i zmianie roku. Od 0.10.0 ma wspólną wyszukiwarkę wszystkich pobranych sekcji i własnych przypomnień, dostępną ze Startu i Więcej. Od 0.9.0 pokazuje na Starcie nowe i zmienione wpisy od poprzedniego wejścia, także pobrane w tle. Od 0.8.0 pozwala oznaczać zadania jako zrobione i cofać ten lokalny status. Od 0.7.0 ma ekran Start „Dzisiaj / Jutro” i dolne menu z pozostałymi panelami pod Więcej. Jej [zakres pierwszej wersji](skula-android/MVP_SCOPE.md) opisuje adaptację wymagań desktopu.
 
 - Oceny, wiadomości, ogłoszenia, frekwencja i plan lekcji.
 - Terminarz w widoku kalendarza z listą poniżej lub samej listy.

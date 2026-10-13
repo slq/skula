@@ -11,7 +11,7 @@ code,name=match.groups();expected="Skula-android-"+name+".apk"
 if apk.name!=expected or "application-debuggable" in result.stdout:raise SystemExit("Wydanie musi być poprawnie nazwanym APK release")
 notes=Path(args.notes).read_text(encoding="utf-8-sig").strip()
 if len(notes)>16000:raise SystemExit("Opis zmian jest za długi")
-metadata=dict(schema=1,packageName="pl.skula.android",versionCode=int(code),versionName=name,apkUrl="https://github.com/slq/skula-home/releases/download/android-v"+name+"/"+expected,sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),size=apk.stat().st_size,notes=notes)
+metadata=dict(schema=1,packageName="pl.skula.android",versionCode=int(code),versionName=name,apkUrl="https://github.com/slq/skula/releases/download/android-v"+name+"/"+expected,sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),size=apk.stat().st_size,notes=notes)
 (apk.parent/"skula-android-update.json").write_text(json.dumps(metadata,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
 # Sources reflect the working copy used for this build, including uncommitted new modules.
 repo=project.parent
