@@ -22,7 +22,7 @@ Jako użytkownik chcę świadomie wybrać aktualizację i zachować lokalne dane
 
 ## Pierwsza instalacja na telefonie rodziny
 
-1. Udostępnij **Skula-android-0.13.1.apk** przez link do wydania albo inną usługę plikową.
+1. Udostępnij **Skula-android-0.14.0.apk** przez link do wydania albo inną usługę plikową.
 2. Na telefonie pobierz i otwórz APK. Zezwól źródłu (np. przeglądarce) na instalowanie, jeśli Android o to poprosi.
 3. Zaloguj szkolne konto. Dane, własne przypomnienia i archiwum są lokalne dla każdego telefonu.
 4. Kolejne wersje sprawdzisz w Ustawieniach. Zgoda na aktualizacje wewnątrz Skula jest osobną zgodą dla tego źródła.
@@ -32,17 +32,17 @@ Jako użytkownik chcę świadomie wybrać aktualizację i zachować lokalne dane
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Build.ps1 -Release
 # Dopiero po sprawdzeniu wydania, z GITHUB_TOKEN w środowisku procesu:
-powershell -ExecutionPolicy Bypass -File .\Publish-Release.ps1 -Version 0.13.1
+powershell -ExecutionPolicy Bypass -File .\Publish-Release.ps1 -Version 0.14.0
 # Opcjonalnie przygotuj wyłącznie draft: dodaj -Draft.
 ```
 
 Skrypt budowania tworzy w artifacts:
 
-- `Skula-android-0.13.1.apk` oraz `.sha256`;
+- `Skula-android-0.14.0.apk` oraz `.sha256`;
 - `skula-android-update.json` — metadane wskazujące ten konkretny APK;
-- `Skula-android-0.13.1-source.zip` — odpowiadające źródła, bez SDK, kluczy, stanów konta i lokalnych konfiguracji.
+- `Skula-android-0.14.0-source.zip` — odpowiadające źródła, bez SDK, kluczy, stanów konta i lokalnych konfiguracji.
 
-Skrypt publikacji potrzebuje tokenu GitHub z prawem Contents: write wyłącznie do slq/skula. Nie wpisuj tokenu do pliku repozytorium ani czatu. Wydanie najpierw powstaje jako draft, otrzymuje wszystkie trzy pliki i dopiero potem jest publikowane jako latest. Alternatywnie utwórz wydanie `android-v0.13.1` w interfejsie GitHub, dodaj te trzy pliki i oznacz jako latest. Publikacja nie następuje przy samym budowaniu APK.
+Skrypt publikacji potrzebuje tokenu GitHub z prawem Contents: write wyłącznie do slq/skula. Nie wpisuj tokenu do pliku repozytorium ani czatu. Wydanie najpierw powstaje jako draft, otrzymuje wszystkie trzy pliki i dopiero potem jest publikowane jako latest. Alternatywnie utwórz wydanie `android-v0.14.0` w interfejsie GitHub, dodaj te trzy pliki i oznacz jako latest. Publikacja nie następuje przy samym budowaniu APK.
 
 Przy nowej wersji zwiększ versionCode, versionName, nazwę artefaktu w Build.ps1 i opis RELEASE_NOTES.md. Nie zmieniaj podpisu. Dla testów Gradle obsługuje nadpisanie `-PskulaVersionCode` i `-PskulaVersionName`; testowe wydania nie są publikowane.
 

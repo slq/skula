@@ -352,3 +352,25 @@ Blank SkulaBackgroundTest emulator:20 scenarios OK (backup,legacy0.12.1-format i
 Private updater fixtures must be regenerated for pl.skula.android: update.apk release0.13.1/code21 with Gradle overrides '-PskulaVersionCode=21' and '-PskulaVersionName=0.13.1', plus unsigned.apk of the same version. Then build default0.13.0/code20 again. Fixtures stay under ignored .tools/update-test-assets and are never published.
 
 No real phone/account or live school/Google data used. GitHub has not been renamed or published. Cross-package calendar migration is documented in MIGRATION.md, rather than claiming ownership of old events.
+
+
+## Wariant A — 13 października 2026
+
+Zaakceptowany prototyp przeniesiono do natywnego interfejsu. Weryfikacja: 29 testów Java, 25 różnych scenariuszy na pustym emulatorze SkulaBackgroundTest / API 31, kompilacja release i Android Lint (0 błędów, 21 ostrzeżeń). Użyto wyłącznie danych demo i syntetycznych. 11 scenariuszy interfejsu powtórzono na końcowym APK release z czcionką 130%; wygląd sprawdzono również przy 100%.
+
+- DesignUiTest: wszystkie 7 nowości i wszystkie 4 lekcje dostępne bez rozwijania, dzisiaj/jutro, przechodzenie między panelami, odtworzenie Activity, filtr nieprzeczytanych i filtr lekcji w kalendarzu oraz widok Lista.
+- SchoolPresentationTest: rzeczywiste formaty godzin z demo i adaptera, brak dopowiadania końca lekcji, zachowanie opisu nauczyciela/sali, oceny opisowe i polskie inicjały.
+- Regresje: HomeScreenTest, ChangesFeedUiTest, CalendarTest, GlobalSearchUiTest, HomeworkCompletionTest, CopyAndScreenshotUiTest, NotificationNavigationTest, ManualRefreshTest.
+- ManualRefreshTest uruchamiany w osobnym procesie Instrumentation: wymaga nowego singletonu repozytorium. Uruchomiony po innych testach w tym samym procesie wykrył istniejący stan demo i nie wykonał oczekiwanego pierwszego odczytu; osobny przebieg zakończył się OK.
+
+Lokalny pakiet do sprawdzenia: `artifacts/Skula-android-design-A.apk` oraz plik SHA-256. Build release, bez debuggable, dotychczasowy podpis, versionName 0.13.1 / code 21. Numer wydania nie został zmieniony; jest to lokalny podgląd zmian, nie nowe opublikowane wydanie. Zrzuty działającej aplikacji: `design-preview/`. Fizycznego telefonu i rzeczywistego konta szkolnego nie używano.
+
+## Wydanie 0.14.0 — 13 października 2026
+
+Końcowe APK: `pl.skula.android`, versionCode 22, versionName 0.14.0, bez debuggable. Build release, 29 testów Java oraz Lint zakończone poprawnie (0 błędów, 21 ostrzeżeń). Podpis SHA-256 certyfikatu: `0b022decbecb6f36fa5279f98d4451165f3ade0b3dca2d50019e5039a10217fe`, zgodny z opublikowanym APK 0.13.1.
+
+Na pustym emulatorze SkulaBackgroundTest / API 31 zainstalowano oficjalne APK 0.13.1, którego suma SHA-256 zgadzała się z plikiem wydania GitHub. Pięć testów UpdateValidationTest i UpdateUiTest przeszło dla docelowego APK 0.14.0. Testy odrzucają uszkodzony, niepodpisany i niezgodny z metadanymi pakiet.
+
+UpdateInstallIntegrationTest potwierdził pobranie i weryfikację APK oraz otwarcie potwierdzenia systemowego instalatora. Po aktualizacji przez `adb install -r` faza verify potwierdziła wersję 22 i zachowanie zaszyfrowanego archiwum, przypomnienia oraz statusu zadania. Tymczasowe uprawnienie instalacji przywrócono do wartości domyślnej, a syntetyczne dane usunięto. Nie testowano ręcznego zatwierdzenia instalatora na fizycznym telefonie.
+
+Na końcowym wydaniu powtórzono 9 scenariuszy DesignUiTest, HomeScreenTest i CopyAndScreenshotUiTest — wszystkie OK. Testy aktualizatora odczytują wersję z lokalnego APK testowego zamiast wymagać stałego numeru wydania. Publiczne archiwum źródeł zawiera także obrazy używane przez README.

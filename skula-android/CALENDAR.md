@@ -5,7 +5,7 @@
 Jako rodzic lub uczeń chcę otworzyć osobną zakładkę Kalendarz, aby zobaczyć wszystkie ważne terminy bez przechodzenia między panelami.
 
 - Zakładka Kalendarz jest obok Przeglądu.
-- Łączy wydarzenia z Terminarza, terminy wykonania Zadań domowych i własne Przypomnienia.
+- Łączy lekcje z Planu lekcji, wydarzenia z Terminarza, terminy wykonania Zadań domowych i własne Przypomnienia.
 - Terminarz, Zadania domowe i Przypomnienia pozostają dostępne osobno.
 - Widok korzysta z już pobranej kopii i lokalnego magazynu przypomnień; nie generuje osobnych żądań do dziennika.
 
@@ -14,9 +14,9 @@ Jako rodzic lub uczeń chcę otworzyć osobną zakładkę Kalendarz, aby zobaczy
 Jako użytkownik chcę wybrać dzień i rodzaje wpisów, aby szybko zobaczyć sprawy na konkretny termin.
 
 - Dostępne są poprzedni/następny miesiąc, Dzisiaj i Cały miesiąc.
-- Liczba wpisów na dniu odpowiada włączonym źródłom i wyszukiwaniu.
-- Pod kalendarzem jest lista wybranego dnia lub miesiąca.
-- Każde źródło ma własny kolor i etykietę: terminarz, zadania, przypomnienia.
+- Kropka oznacza dzień z wpisami. Opis dla czytnika ekranu podaje liczbę zgodną z włączonymi źródłami i wyszukiwaniem.
+- Pod kalendarzem jest lista wybranego dnia lub miesiąca. Przełącznik Miesiąc / Lista pozwala schować siatkę; wybór zachowuje się po odtworzeniu ekranu.
+- Źródła mają etykiety: lekcje, wydarzenia, zadania, przypomnienia; rodzaj wpisu jest dodatkowo oznaczony ikoną i kolorem.
 - Można wyłączyć dowolne źródło, wyszukiwać i sortować listę.
 - Wybór dnia, miesiąca, źródeł i zapytania jest zachowany przy odtworzeniu ekranu przez Androida. Terminarz ma niezależny wybór miesiąca i dnia.
 
@@ -40,4 +40,4 @@ Jako użytkownik chcę widzieć poprawne terminy z mojego konta także offline, 
 - Błąd sekcji pokazuje komunikat i pozostawia starszą kopię. Terminarz informuje o miesiącu poza zakresem odczytu; zakres szkolnych danych nadal zależy od dziennika.
 - Pusty widok wskazuje możliwość zmiany dnia, źródeł i wyszukiwania.
 
-Weryfikacja jest opisana w [TESTING.md](TESTING.md). Oznaczanie zadań jako zrobione i przebudowa ekranu startowego pozostają kolejnymi etapami.
+Weryfikacja jest opisana w [TESTING.md](TESTING.md). Oznaczanie zadań jako zrobione jest dostępne także na tej liście.

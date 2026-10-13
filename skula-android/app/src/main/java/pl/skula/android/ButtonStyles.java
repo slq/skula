@@ -8,7 +8,7 @@ import android.widget.Button;
 
 /** Flat controls with a real ripple, readable disabled state and 48 dp touch target. */
 public final class ButtonStyles {
-    static final int TEAL = 0xff087e8b;
+    static final int TEAL = DesignUi.TEAL;
     static int dp(Context c, int n) { return Math.round(n * c.getResources().getDisplayMetrics().density); }
     public static Button make(Context c, String label, Runnable action, boolean accent) {
         Button b = new Button(c); b.setText(label); b.setAllCaps(false); b.setTextSize(13);
@@ -24,9 +24,9 @@ public final class ButtonStyles {
         b.setTextColor(new ColorStateList(states, new int[]{0xff8795a4, accent ? Color.WHITE : TEAL}));
         GradientDrawable normal = new GradientDrawable();
         normal.setColor(accent ? TEAL : Color.WHITE); normal.setCornerRadius(dp(c,10));
-        if (!accent) normal.setStroke(dp(c,1), 0xffd4e1e7);
-        GradientDrawable disabled = new GradientDrawable(); disabled.setColor(0xffe7edf1); disabled.setCornerRadius(dp(c,10));
+        if (!accent) normal.setStroke(dp(c,1), DesignUi.LINE);
+        GradientDrawable disabled = new GradientDrawable(); disabled.setColor(0xffe9efef); disabled.setCornerRadius(dp(c,10));
         StateListDrawable colors = new StateListDrawable(); colors.addState(states[0], disabled); colors.addState(states[1], normal);
-        b.setBackground(new RippleDrawable(ColorStateList.valueOf(accent ? 0x33ffffff : 0x22087e8b), colors, null));
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(accent ? 0x33ffffff : 0x22087c75), colors, null));
     }
 }

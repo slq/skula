@@ -27,8 +27,8 @@ import java.util.*;
 
 /** Native phone UI. No account secrets are stored in Activity saved state. */
 public final class MainActivity extends Activity implements MobileRepository.Listener {
-    private static final int BG = 0xfff4f6fa, INK = 0xff183047, MUTED = 0xff64748b;
-    private static final int TEAL = 0xff087e8b, WHITE = Color.WHITE, DARK = 0xff172d40;
+    private static final int BG = DesignUi.BG, INK = DesignUi.INK, MUTED = DesignUi.MUTED;
+    private static final int TEAL = DesignUi.TEAL, WHITE = Color.WHITE, DARK = DesignUi.DARK;
     private static final String[] KEYS = {"overview", "calendar", "grades", "messages", "announcements", "schedule", "homework", "attendance", "timetable", "reminders", "search", "settings"};
     private static final String[] TITLES = {"Przegląd", "Kalendarz", "Oceny", "Wiadomości", "Ogłoszenia", "Terminarz", "Zadania domowe", "Frekwencja", "Plan lekcji", "Przypomnienia", "Szukaj", "Ustawienia"};
     private MobileRepository repository;
@@ -51,12 +51,12 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     private LocalDate selectedDay;
     private YearMonth unifiedMonth=YearMonth.now();
     private LocalDate unifiedDay;
-    private boolean calendarEvents=true,calendarTasks=true,calendarReminders=true;
+    private boolean calendarEvents=true,calendarTasks=true,calendarReminders=true,calendarLessons=true;
     private Dialog loginDialog, moreDialog;
     private boolean overviewTomorrow;
     private LocalDate overviewDate;
     private String changesSource="all";
-    private boolean changesExpanded;
+    private boolean unreadMessagesOnly, calendarList;
     private ReminderUi reminderUi;
     private GoogleCalendarUi googleCalendarUi;
     private UpdateUi updateUi;
@@ -85,7 +85,8 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
             if(!SearchData.sources().contains(globalSource))globalSource="all";
             searchLimit=Math.max(50,Math.min(5000,saved.getInt("searchLimit",50)));
             overviewTomorrow = saved.getBoolean("overviewTomorrow", false);
-            changesSource=saved.getString("changesSource","all");changesExpanded=saved.getBoolean("changesExpanded",false);
+            changesSource=saved.getString("changesSource","all");
+            unreadMessagesOnly=saved.getBoolean("unreadMessagesOnly",false);calendarList=saved.getBoolean("calendarList",false);
             calendar = saved.getBoolean("calendar", true);
             homeworkUpcoming = saved.getBoolean("homeworkUpcoming", true);
             homeworkStatusFilter=saved.getInt("homeworkStatusFilter",0);
@@ -97,7 +98,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
             if (day != null) try { selectedDay = LocalDate.parse(day); } catch (Exception ignored) { }
             try {unifiedMonth=YearMonth.parse(saved.getString("unifiedMonth",unifiedMonth.toString()));}catch(Exception ignored){}
             try {String chosen=saved.getString("unifiedDay");if(chosen!=null)unifiedDay=LocalDate.parse(chosen);}catch(Exception ignored){}
-            calendarEvents=saved.getBoolean("calendarEvents",true);calendarTasks=saved.getBoolean("calendarTasks",true);calendarReminders=saved.getBoolean("calendarReminders",true);
+            calendarLessons=saved.getBoolean("calendarLessons",true);calendarEvents=saved.getBoolean("calendarEvents",true);calendarTasks=saved.getBoolean("calendarTasks",true);calendarReminders=saved.getBoolean("calendarReminders",true);
             Bundle savedQueries = saved.getBundle("queries");
             if (savedQueries != null) for (String key : savedQueries.keySet()) queries.put(key, savedQueries.getString(key, ""));
         }
@@ -136,7 +137,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         updateUi.start();
         repository.focused(true);
         repository.observe(this);
-        if(repository.enterApp()){changesSource="all";changesExpanded=false;}
+        if(repository.enterApp()){changesSource="all";}
         repository.open();
         foreground.removeCallbacks(refreshTick); foreground.postDelayed(refreshTick, 30000);
         android.content.IntentFilter events = new android.content.IntentFilter("pl.skula.android.REMINDERS_CHANGED");
@@ -165,7 +166,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
             loginPrompted = true;
             remindersReady = false; // The receiver may have updated the stored status while this Activity was stopped.
             select("reminders"); reloadReminders();
-        } else if (intent.getData() != null && "changes".equals(intent.getData().getHost())) {changesSource="all";changesExpanded=false;select("overview");}
+        } else if (intent.getData() != null && "changes".equals(intent.getData().getHost())) {changesSource="all";select("overview");}
         else if(intent.getData()!=null&&"updates".equals(intent.getData().getHost())){loginPrompted=true;select("settings");}
         else if ("android.provider.calendar.action.HANDLE_CUSTOM_EVENT".equals(intent.getAction())) select("calendar");
     }
@@ -202,7 +203,8 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         out.putString("page", page);
         out.putString("globalSource",globalSource);out.putInt("searchLimit",searchLimit);
         out.putBoolean("overviewTomorrow", overviewTomorrow);
-        out.putString("changesSource",changesSource);out.putBoolean("changesExpanded",changesExpanded);
+        out.putString("changesSource",changesSource);
+        out.putBoolean("unreadMessagesOnly",unreadMessagesOnly);out.putBoolean("calendarList",calendarList);
         out.putString("pendingReminder",pendingReminder);
         out.putString("month", month.toString());
         if (selectedDay != null) out.putString("day", selectedDay.toString());
@@ -211,7 +213,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         out.putInt("homeworkStatusFilter",homeworkStatusFilter);
         out.putBoolean("loginPrompted", loginPrompted);
         out.putString("unifiedMonth",unifiedMonth.toString());if(unifiedDay!=null)out.putString("unifiedDay",unifiedDay.toString());
-        out.putBoolean("calendarEvents",calendarEvents);out.putBoolean("calendarTasks",calendarTasks);out.putBoolean("calendarReminders",calendarReminders);
+        out.putBoolean("calendarLessons",calendarLessons);out.putBoolean("calendarEvents",calendarEvents);out.putBoolean("calendarTasks",calendarTasks);out.putBoolean("calendarReminders",calendarReminders);
         Bundle values = new Bundle();
         for (Map.Entry<String, String> entry : queries.entrySet()) values.putString(entry.getKey(), entry.getValue());
         out.putBundle("queries", values);
@@ -223,12 +225,12 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     private LinearLayout row() { LinearLayout v = new LinearLayout(this); v.setOrientation(LinearLayout.HORIZONTAL); v.setGravity(Gravity.CENTER_VERTICAL); return v; }
     private TextView text(String value, int size, int color, boolean bold) {
         TextView v = new TextView(this); v.setText(value); v.setTextSize(size); v.setTextColor(color);
-        if (bold) v.setTypeface(null, Typeface.BOLD);
+        if (bold) v.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         v.setPadding(0, dp(3), 0, dp(3));
         return v;
     }
     private GradientDrawable background(int color) {
-        GradientDrawable drawable = new GradientDrawable(); drawable.setColor(color); drawable.setCornerRadius(dp(14)); return drawable;
+        return DesignUi.surface(this,color,16,color==WHITE);
     }
     private Button button(String label, Runnable action, boolean accent) { return ButtonStyles.make(this, label, action, accent); }
     private void weighted(LinearLayout parent, View child) {
@@ -240,69 +242,115 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2); p.bottomMargin = dp(12); parent.addView(child, p);
     }
     private LinearLayout card() {
-        LinearLayout v = column(); v.setPadding(dp(16), dp(12), dp(16), dp(12)); v.setBackground(background(WHITE)); spaced(list, v); return v;
+        LinearLayout v = column(); v.setPadding(dp(16), dp(14), dp(16), dp(14)); v.setBackground(background(WHITE)); v.setClipToOutline(true); spaced(list, v); return v;
+    }
+
+
+    private void divider(LinearLayout parent) {
+        View line=new View(this);line.setBackgroundColor(DesignUi.LINE);
+        parent.addView(line,new LinearLayout.LayoutParams(-1,dp(1)));
+    }
+    private Button action(String label,Runnable action) {
+        Button b=button(label,action,false);DesignUi.quiet(b,false);b.setTextColor(TEAL);b.setTextSize(12);
+        b.setPadding(dp(8),dp(4),dp(8),dp(4));return b;
+    }
+    private Button segment(String label,Runnable action,boolean active) {
+        Button b=button(label,action,false);DesignUi.quiet(b,active);b.setTextSize(13);return b;
+    }
+    private void sectionHeading(String title,String action,Runnable click) {
+        LinearLayout header=row();header.setPadding(0,dp(8),0,dp(4));
+        weighted(header,text(title,18,INK,true));
+        if(click!=null)header.addView(action(action,click));
+        list.addView(header);
+    }
+    private int sourceIcon(String kind) {
+        return switch(kind) {
+            case "messages"->R.drawable.nav_messages;
+            case "announcements"->R.drawable.nav_announcements;
+            case "schedule","timetable"->R.drawable.nav_calendar;
+            case "homework"->R.drawable.ui_tasks;
+            case "reminders"->R.drawable.ui_bell;
+            case "settings"->R.drawable.ui_settings;
+            case "search"->R.drawable.ui_search;
+            case "grades","attendance"->R.drawable.ui_chart;
+            default->R.drawable.ui_book;
+        };
+    }
+    private View entryBadge(JSONObject item,String kind) {
+        String grade=kind.equals("grades")?SchoolPresentation.grade(item.optString("title")):"";
+        if(!grade.isEmpty()||kind.equals("messages")) {
+            TextView badge=text(grade.isEmpty()?SchoolPresentation.initials(item.optString("subtitle")):grade,grade.isEmpty()?12:20,TEAL,true);
+            badge.setGravity(Gravity.CENTER);badge.setBackground(DesignUi.surface(this,DesignUi.MINT,12,false));
+            badge.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);return badge;
+        }
+        ImageView badge=DesignUi.icon(this,sourceIcon(kind),TEAL);badge.setPadding(dp(9),dp(9),dp(9),dp(9));
+        badge.setBackground(DesignUi.surface(this,DesignUi.MINT,12,false));return badge;
+    }
+    private void addBadge(LinearLayout parent,JSONObject item,String kind,int size) {
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(size),dp(size));p.rightMargin=dp(12);p.topMargin=dp(3);
+        parent.addView(entryBadge(item,kind),p);
     }
 
     private void buildShell() {
-        shell = column(); shell.setBackgroundColor(BG);
-        shell.setOnApplyWindowInsetsListener((view, insets) -> {
-            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+        shell=column();shell.setBackgroundColor(BG);
+        getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
+        int lightBars=View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        lightBars|=View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        getWindow().getDecorView().setSystemUiVisibility(lightBars);
+        shell.setOnApplyWindowInsetsListener((view,insets)->{
+            view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
             return insets;
         });
-        LinearLayout top = column(); top.setPadding(dp(18), dp(12), dp(18), dp(10)); top.setBackgroundColor(DARK);
-        LinearLayout titleRow = row();
-        weighted(titleRow, text("Skula", 24, WHITE, true));
-        account = button("Konto", this::showLogin, false); titleRow.addView(account);
+        LinearLayout top=column();top.setPadding(dp(16),dp(4),dp(12),dp(4));
+        LinearLayout titleRow=row();
+        ImageView brand=new ImageView(this);brand.setImageResource(R.drawable.brand_mark);
+        brand.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        titleRow.addView(brand,new LinearLayout.LayoutParams(dp(32),dp(32)));
+        TextView logo=text("skula",24,INK,true);logo.setPadding(dp(7),0,0,0);weighted(titleRow,logo);
+        titleRow.addView(DesignUi.iconButton(this,R.drawable.ui_search,"Szukaj we wszystkich sekcjach",()->select("search")));
+        refresh=DesignUi.iconButton(this,R.drawable.ui_refresh,"Odśwież",repository::refresh);titleRow.addView(refresh);
+        account=DesignUi.iconButton(this,R.drawable.ui_account,"Konto",this::showLogin);titleRow.addView(account);
         top.addView(titleRow);
-        status = text("Przygotowuję aplikację…", 12, 0xffb7cedf, false); top.addView(status);
-        progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        progress.setIndeterminate(true); top.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
-        shell.addView(top);
-
-        LinearLayout section = row(); section.setPadding(dp(18), 0, dp(18), dp(8));
-        heading = text("Przegląd", 23, INK, true); weighted(section, heading);
-        refresh = button("Odśwież", repository::refresh, true); section.addView(refresh); shell.addView(section);
-        filters = column(); filters.setPadding(dp(18), 0, dp(18), dp(8));
-        search = new EditText(this); search.setSingleLine(true); search.setTextSize(15); search.setHint("Szukaj w tej sekcji");
-        search.setContentDescription("Wyszukiwanie w bieżącej sekcji");
-        search.addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence s, int st, int count, int after) { }
-            public void onTextChanged(CharSequence s, int st, int before, int count) {
-                if (!updatingSearch) { queries.put(page, s.toString()); if(page.equals("search"))searchLimit=50; renderList(); scroll.scrollTo(0,0); }
+        status=text("Przygotowuję aplikację…",11,MUTED,false);status.setPadding(dp(4),dp(2),dp(4),dp(6));
+        status.setOnClickListener(v->showText("Status odczytu",state.optString("status")));
+        top.addView(status);
+        progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setIndeterminate(true);
+        top.addView(progress,new LinearLayout.LayoutParams(-1,dp(2)));shell.addView(top);
+        scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setClipToPadding(false);
+        LinearLayout content=column();content.setPadding(dp(20),dp(8),dp(20),dp(24));scroll.addView(content);
+        heading=text("Przegląd",28,INK,true);heading.setPadding(0,dp(4),0,dp(12));content.addView(heading);
+        filters=column();
+        LinearLayout searchRow=row();searchRow.setBackground(DesignUi.surface(this,0xffe9efef,12,false));
+        search=new EditText(this);search.setSingleLine(true);search.setTextSize(14);search.setHint("Szukaj w tej sekcji");search.setTextColor(INK);search.setHintTextColor(MUTED);
+        search.setBackgroundColor(Color.TRANSPARENT);search.setPadding(dp(14),dp(10),dp(4),dp(10));search.setMinimumHeight(dp(48));
+        search.setContentDescription("Wyszukiwanie w bieżącej sekcji");search.setSaveEnabled(false);weighted(searchRow,search);
+        searchRow.addView(DesignUi.iconButton(this,R.drawable.ui_clear,"Wyczyść",()->search.setText("")));
+        searchRow.addView(DesignUi.iconButton(this,R.drawable.ui_sort,"Sortowanie",()->new AlertDialog.Builder(this).setTitle("Sortowanie")
+                .setSingleChoiceItems(new String[]{"Domyślna kolejność","Najnowsze","Najstarsze","Tytuł A–Z"},sort,(d,index)->{sort=index;d.dismiss();renderList();})
+                .setNegativeButton("Anuluj",null).show()));
+        spaced(filters,searchRow);
+        search.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int count,int after){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){
+                if(!updatingSearch){queries.put(page,s.toString());if(page.equals("search"))searchLimit=50;renderList();scroll.scrollTo(0,0);}
             }
-            public void afterTextChanged(Editable e) { }
+            public void afterTextChanged(Editable e){}
         });
-        search.setSaveEnabled(false); // Queries are saved explicitly, without Android assigning unstable view IDs.
-        filters.addView(search);
         searchSource=new Spinner(this);searchSource.setContentDescription("Źródło wspólnego wyszukiwania");
         List<String> sourceLabels=new ArrayList<>();sourceLabels.add("Wszystkie sekcje");
         for(String kind:SearchData.sources())sourceLabels.add(title(kind));
-        searchSource.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,sourceLabels));
-        searchSource.setMinimumHeight(dp(48));filters.addView(searchSource);
-        searchSource.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
-            public void onItemSelected(AdapterView<?> parent,View v,int index,long id){
+        searchSource.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,sourceLabels));searchSource.setMinimumHeight(dp(48));
+        filters.addView(searchSource);searchSource.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+            public void onItemSelected(AdapterView<?> p,View v,int index,long id){
                 String source=index==0?"all":SearchData.sources().get(index-1);
                 if(page.equals("search")&&!source.equals(globalSource)){globalSource=source;searchLimit=50;renderList();scroll.scrollTo(0,0);}
             }
-            public void onNothingSelected(AdapterView<?> parent){}
+            public void onNothingSelected(AdapterView<?> p){}
         });
-        LinearLayout filterActions = row();
-        Spinner sortBy = new Spinner(this);
-        ArrayAdapter<String> choices = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Domyślna kolejność", "Najnowsze", "Najstarsze", "Tytuł A–Z"});
-        sortBy.setAdapter(choices);
-        sortBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> p, View v, int index, long id) { sort = index; renderList(); }
-            public void onNothingSelected(AdapterView<?> p) { }
-        });
-        weighted(filterActions, sortBy);
-        filterActions.addView(button("Wyczyść", () -> search.setText(""), false)); filters.addView(filterActions);
-        shell.addView(filters);
-        scroll = new ScrollView(this); scroll.setFillViewport(true);
-        list = column(); list.setPadding(dp(18), dp(4), dp(18), dp(24)); scroll.addView(list);
-        shell.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        buildBottomNavigation();
-        setContentView(shell);
+        content.addView(filters);
+        list=column();content.addView(list);
+        shell.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        buildBottomNavigation();setContentView(shell);
     }
 
     private String title(String key) {
@@ -320,12 +368,10 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     private void select(String key) {
         if (!Arrays.asList(KEYS).contains(key)) key = "overview";
         page = key;
-        heading.setText(title(page));
+        heading.setText(title(page));heading.setVisibility(page.equals("overview")?View.GONE:View.VISIBLE);
         for (Map.Entry<String, Button> tab : tabs.entrySet()) {
             boolean selected = tab.getKey().equals(page) || (tab.getKey().equals("more") && !Arrays.asList("overview","calendar","announcements","messages").contains(page));
-            ButtonStyles.style(tab.getValue(), selected);
-            tab.getValue().setSelected(selected);
-            for(android.graphics.drawable.Drawable icon:tab.getValue().getCompoundDrawables()) if(icon!=null) icon.setTint(selected?WHITE:TEAL);
+            DesignUi.navigation(tab.getValue(),selected);
         }
         filters.setVisibility(page.equals("overview") || page.equals("settings") ? View.GONE : View.VISIBLE);
         search.setHint(page.equals("search")?"Szukaj we wszystkich sekcjach":"Szukaj w tej sekcji");
@@ -342,7 +388,10 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         updateReminderBadge();
         boolean busy = state.optBoolean("busy");
         String mode = state.optString("mode", "idle");
-        status.setText((mode.equals("demo") ? "DEMO · " : mode.equals("offline") ? "KOPIA LOKALNA · " : "") + state.optString("status", "Przygotowuję aplikację…"));
+        status.setText(mode.equals("demo")?"DEMO · dane przykładowe":(mode.equals("offline")?"KOPIA LOKALNA · ":"")+state.optString("status","Przygotowuję aplikację…"));
+        status.setContentDescription("Status odczytu: "+state.optString("status"));
+        Button messagesTab=tabs.get("messages");
+        if(messagesTab!=null)messagesTab.setContentDescription("Wiadomości · nieprzeczytane: "+items("messages").stream().filter(item->item.optBoolean("unread")).count());
         refresh.setEnabled(!busy && !mode.equals("idle")); account.setEnabled(!busy);
         progress.setVisibility(busy ? View.VISIBLE : View.GONE);
         int y = scroll.getScrollY(); renderList(); scroll.post(() -> scroll.scrollTo(0, y));
@@ -379,23 +428,28 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         String fetched = object(state, "updated_at").optString(page);
         list.addView(text(fetched.trim().isEmpty() ? "Sekcja jeszcze niepobrana" : "Ostatni odczyt: " + DisplayData.date(fetched), 12, MUTED, false));
         notice(object(state, "errors").optString(page));
-        if(page.equals("announcements"))spaced(list,text("Zachowujemy wszystkie pobrane ogłoszenia, także z poprzednich lat. Ponowny odczyt tego samego wpisu zastępuje treść najnowszą wersją. Brak wpisu na liście dziennika nie usuwa lokalnej kopii.",13,MUTED,false));
+        if(page.equals("announcements"))spaced(list,text("Pobrane ogłoszenia pozostają w lokalnym archiwum.",12,MUTED,false));
+        if(page.equals("messages")) {
+            LinearLayout modes=row();long unread=items("messages").stream().filter(item->item.optBoolean("unread")).count();
+            weighted(modes,segment("Wszystkie",()->{unreadMessagesOnly=false;renderList();},!unreadMessagesOnly));
+            weighted(modes,segment("Nieprzeczytane · "+unread,()->{unreadMessagesOnly=true;renderList();},unreadMessagesOnly));spaced(list,modes);
+        }
         String query = queries.getOrDefault(page, "").trim().toLowerCase(Locale.ROOT);
         List<JSONObject> all = items(page);
         List<JSONObject> filtered = new ArrayList<>();
         for (JSONObject item : all) {
             String haystack = (item.optString("title") + " " + item.optString("subtitle") + " " + item.optString("when") + " " + item.optString("details")).toLowerCase(Locale.ROOT);
-            if (haystack.contains(query)) filtered.add(item);
+            if (haystack.contains(query)&&(!page.equals("messages")||!unreadMessagesOnly||item.optBoolean("unread"))) filtered.add(item);
         }
         if (page.equals("homework")) {
-            spaced(list, text("Zadania udostępnione przez dziennika dla bieżącego roku szkolnego. Data oznacza termin wykonania; aplikacja nie potwierdza oddania pracy.", 13, MUTED, false));
+            spaced(list, text("Twój status na telefonie nie oznacza oddania pracy w dzienniku.", 13, MUTED, false));
             LinearLayout modes = row();
-            weighted(modes, button("Terminy od dziś", () -> { homeworkUpcoming = true; renderList(); }, homeworkUpcoming));
-            weighted(modes, button("Wszystkie terminy", () -> { homeworkUpcoming = false; renderList(); }, !homeworkUpcoming)); spaced(list, modes);
+            weighted(modes, segment("Terminy od dziś", () -> { homeworkUpcoming = true; renderList(); }, homeworkUpcoming));
+            weighted(modes, segment("Wszystkie terminy", () -> { homeworkUpcoming = false; renderList(); }, !homeworkUpcoming)); spaced(list, modes);
             LinearLayout statuses=row();
             String[] labels={"Do zrobienia","Zrobione","Wszystkie"};
             for(int i=0;i<labels.length;i++) {
-                int value=i;Button option=button(labels[i],()->{homeworkStatusFilter=value;renderList();},homeworkStatusFilter==i);
+                int value=i;Button option=segment(labels[i],()->{homeworkStatusFilter=value;renderList();},homeworkStatusFilter==i);
                 option.setEnabled(homeworkStatus.editable());weighted(statuses,option);
             }
             spaced(list,statuses);
@@ -436,72 +490,93 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     }
 
     private void unifiedCalendar() {
-        spaced(list,text("Wydarzenia, terminy zadań i własne przypomnienia w jednym miejscu.",14,MUTED,false));
-        String[] kinds={"schedule","homework","reminders"};boolean[] enabled={calendarEvents,calendarTasks,calendarReminders};
-        LinearLayout sources=card();sources.addView(text("Pokaż w kalendarzu",15,INK,true));
-        for(int i=0;i<kinds.length;i++) {
-            final String kind=kinds[i];CheckBox option=new CheckBox(this);option.setText(CalendarData.label(kind));option.setTextColor(CalendarData.color(kind));option.setChecked(enabled[i]);
-            option.setContentDescription("Źródło kalendarza: "+CalendarData.label(kind));sources.addView(option);
-            option.setOnCheckedChangeListener((b,checked)->{if(kind.equals("schedule"))calendarEvents=checked;else if(kind.equals("homework"))calendarTasks=checked;else calendarReminders=checked;renderList();});
+        LinearLayout modes=row();
+        weighted(modes,segment("Miesiąc",()->{calendarList=false;renderList();},!calendarList));
+        weighted(modes,segment("Lista",()->{calendarList=true;renderList();},calendarList));spaced(list,modes);
+        for(String kind:new String[]{"schedule","homework","timetable"}){
+            String error=object(state,"errors").optString(kind);if(!error.isEmpty())notice(title(kind)+": "+error);
         }
-        for(String kind:new String[]{"schedule","homework"}) {
-            String fetched=object(state,"updated_at").optString(kind);
-            spaced(list,text(title(kind)+": "+(fetched.isEmpty()?"sekcja jeszcze niepobrana":"ostatni odczyt "+DisplayData.date(fetched)),12,MUTED,false));
-            if(!object(state,"errors").optString(kind).isEmpty())notice(title(kind)+": "+object(state,"errors").optString(kind));
-        }
-        if(!remindersReady)spaced(list,text("Wczytuję własne przypomnienia…",12,MUTED,false));
         notice(reminderUi.calendarError());
         List<JSONObject> rows=CalendarData.combine(calendarEvents?items("schedule"):Collections.emptyList(),calendarTasks?items("homework"):Collections.emptyList(),new JSONArray(),"",false);
+        if(calendarLessons)for(JSONObject item:items("timetable"))try{rows.add(new JSONObject(item.toString()).put("calendar_kind","timetable"));}catch(org.json.JSONException invalid){notice("Nie odczytano wpisu planu lekcji.");}
         if(calendarReminders)rows.addAll(reminderUi.calendarItems());
         String query=queries.getOrDefault("calendar","").trim().toLowerCase(Locale.ROOT);
         rows.removeIf(item->!(CalendarData.label(item.optString("calendar_kind"))+" "+item.optString("title")+" "+item.optString("subtitle")+" "+item.optString("details")+" "+DisplayData.date(item.optString("when"))).toLowerCase(Locale.ROOT).contains(query));
-        calendar(rows);
+        if(!calendarList)calendar(rows);
+        else {
+            LinearLayout monthRow=row();
+            monthRow.addView(action("‹",()->{unifiedMonth=unifiedMonth.minusMonths(1);unifiedDay=null;renderList();}));
+            weighted(monthRow,text(unifiedMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy",Locale.forLanguageTag("pl"))),17,INK,true));
+            monthRow.addView(action("›",()->{unifiedMonth=unifiedMonth.plusMonths(1);unifiedDay=null;renderList();}));spaced(list,monthRow);
+            spaced(list,action("Cały miesiąc",()->{unifiedDay=null;renderList();}));
+        }
+        TextView label=text("Pokaż w kalendarzu",12,MUTED,false);list.addView(label);
+        HorizontalScrollView sourceScroll=new HorizontalScrollView(this);sourceScroll.setHorizontalScrollBarEnabled(false);LinearLayout sources=row();sourceScroll.addView(sources);
+        String[] kinds={"timetable","schedule","homework","reminders"},labels={"Lekcje","Wydarzenia","Zadania","Przypomnienia"};
+        boolean[] enabled={calendarLessons,calendarEvents,calendarTasks,calendarReminders};
+        for(int i=0;i<kinds.length;i++){
+            final String kind=kinds[i];CheckBox option=new CheckBox(this);option.setText(labels[i]);option.setTextSize(12);option.setTextColor(CalendarData.color(kind));
+            option.setButtonTintList(android.content.res.ColorStateList.valueOf(CalendarData.color(kind)));option.setChecked(enabled[i]);option.setMinHeight(dp(48));
+            option.setContentDescription("Źródło kalendarza: "+CalendarData.label(kind));sources.addView(option);
+            option.setOnCheckedChangeListener((b,checked)->{if(kind.equals("timetable"))calendarLessons=checked;else if(kind.equals("schedule"))calendarEvents=checked;else if(kind.equals("homework"))calendarTasks=checked;else calendarReminders=checked;renderList();});
+        }
+        spaced(list,sourceScroll);
         rows.removeIf(item->{LocalDate day=DisplayData.day(item.optString("when"));return unifiedDay!=null?!unifiedDay.equals(day):day==null||!YearMonth.from(day).equals(unifiedMonth);});
         Comparator<JSONObject> byDate=Comparator.comparing(item->DisplayData.day(item.optString("when")));
         byDate=byDate.thenComparing(item->DisplayData.date(item.optString("when")));
         rows.sort(sort==3?Comparator.comparing(item->item.optString("title").toLowerCase(Locale.ROOT)):sort==1?byDate.reversed():byDate);
-        spaced(list,text((unifiedDay==null?"Wpisy w miesiącu":"Wpisy na "+DisplayData.date(unifiedDay.toString()))+" · "+rows.size(),16,INK,true));
+        spaced(list,text((unifiedDay==null?"Wpisy w miesiącu":"Wpisy na "+DisplayData.date(unifiedDay.toString()))+" · "+rows.size(),17,INK,true));
         if(rows.isEmpty())card().addView(text("Brak wpisów dla wybranego widoku. Sprawdź dzień, źródła i wyszukiwanie.",15,MUTED,false));
         for(JSONObject item:rows)entry(item,item.optString("calendar_kind"));
+        if(!remindersReady)spaced(list,text("Wczytuję własne przypomnienia…",12,MUTED,false));
+        for(String kind:new String[]{"schedule","homework","timetable"}){
+            String fetched=object(state,"updated_at").optString(kind);
+            spaced(list,text(title(kind)+": "+(fetched.isEmpty()?"sekcja jeszcze niepobrana":"ostatni odczyt "+DisplayData.date(fetched)),11,MUTED,false));
+        }
     }
+
     private YearMonth shownCalendarMonth(){return page.equals("calendar")?unifiedMonth:month;}
     private LocalDate shownCalendarDay(){return page.equals("calendar")?unifiedDay:selectedDay;}
     private void calendarMonth(YearMonth value){if(page.equals("calendar"))unifiedMonth=value;else month=value;}
     private void calendarDay(LocalDate value){if(page.equals("calendar"))unifiedDay=value;else selectedDay=value;}
 
-    private void entry(JSONObject item, String kind) {
-        LinearLayout c = card();
-        if(page.equals("calendar"))c.addView(text(CalendarData.label(kind),12,CalendarData.color(kind),true));
-        if(page.equals("search"))c.addView(text(title(kind),12,TEAL,true));
-        String marker = item.optBoolean("unread") ? "● Nieprzeczytana" : item.optBoolean("changed") ? "+ Nowa lub zmieniona" : "";
-        if (!marker.isEmpty()) c.addView(text(marker, 12, TEAL, true));
-        if(kind.equals("announcements")&&item.optBoolean("archived"))c.addView(text("Lokalne archiwum",12,MUTED,true));
-        TextView itemTitle=text(item.optString("title", "Bez tytułu"),16,INK,true);
-        if(kind.equals("homework")&&homeworkStatus.done(item)) {itemTitle.setTextColor(MUTED);itemTitle.setPaintFlags(itemTitle.getPaintFlags()|android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);}
-        c.addView(itemTitle);
-        c.addView(text(item.optString("subtitle"), 13, MUTED, false));
-        c.addView(text((kind.equals("homework") ? "Termin: " : "") + DisplayData.date(item.optString("when")), 12, MUTED, false));
-        if (kind.equals("homework")) {
-            homeworkStatus.bind(c,item);
-            LocalDate day = DisplayData.day(item.optString("when"));
-            if (day != null && day.isBefore(LocalDate.now())) c.addView(text("Termin minął", 12, MUTED, false));
-            else if (LocalDate.now().equals(day)) c.addView(text("Termin dzisiaj", 12, TEAL, true));
-            else if (LocalDate.now().plusDays(1).equals(day)) c.addView(text("Termin jutro", 12, TEAL, true));
+    private void entry(JSONObject item,String kind) {
+        LinearLayout outer=row();outer.setGravity(Gravity.TOP);outer.setPadding(0,dp(14),0,dp(14));
+        addBadge(outer,item,kind,40);
+        LinearLayout copy=column();weighted(outer,copy);
+        if(page.equals("calendar"))copy.addView(text(CalendarData.label(kind),11,CalendarData.color(kind),true));
+        if(page.equals("search"))copy.addView(text(title(kind),11,TEAL,true));
+        String marker=item.optBoolean("unread")?"● Nieprzeczytana":item.optBoolean("changed")?"+ Nowa lub zmieniona":"";
+        if(!marker.isEmpty())copy.addView(text(marker,11,TEAL,true));
+        if(kind.equals("announcements")&&item.optBoolean("archived"))copy.addView(text("Lokalne archiwum",11,MUTED,true));
+        if(kind.equals("messages"))copy.addView(text(item.optString("subtitle"),12,MUTED,false));
+        TextView title=text(item.optString("title","Bez tytułu"),15,INK,true);
+        if(kind.equals("homework")&&homeworkStatus.done(item)){title.setTextColor(MUTED);title.setPaintFlags(title.getPaintFlags()|android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);}
+        copy.addView(title);
+        if(!kind.equals("messages")&&!item.optString("subtitle").isEmpty())copy.addView(text(item.optString("subtitle"),13,MUTED,false));
+        copy.addView(text((kind.equals("homework")?"Termin: ":"")+DisplayData.date(item.optString("when")),12,MUTED,false));
+        if(kind.equals("homework")){
+            homeworkStatus.bind(copy,item);
+            LocalDate day=DisplayData.day(item.optString("when"));
+            if(day!=null&&day.isBefore(LocalDate.now()))copy.addView(text("Termin minął",12,0xff915b13,false));
+            else if(LocalDate.now().equals(day))copy.addView(text("Termin dzisiaj",12,TEAL,true));
+            else if(LocalDate.now().plusDays(1).equals(day))copy.addView(text("Termin jutro",12,TEAL,true));
         }
-        c.setOnClickListener(v -> {if(page.equals("search"))hideKeyboard();if(kind.equals("reminders"))reminderUi.open(item.optString("reminder_id"));else details(item,kind);});
-        c.setContentDescription(item.optString("title") + ". Otwórz szczegóły");
-        c.setFocusable(true);
+        Runnable open=()->{if(page.equals("search"))hideKeyboard();if(kind.equals("reminders"))reminderUi.open(item.optString("reminder_id"));else details(item,kind);};
+        DesignUi.clickable(outer,Color.TRANSPARENT,12,open);copy.setOnClickListener(v->open.run());
+        outer.setContentDescription(item.optString("title")+". Otwórz szczegóły");list.addView(outer);divider(list);
     }
 
     private void buildBottomNavigation() {
-        LinearLayout nav=row(); nav.setBackgroundColor(WHITE); nav.setPadding(dp(6),dp(5),dp(6),dp(5));
+        divider(shell);
+        LinearLayout nav=row(); nav.setBackgroundColor(WHITE); nav.setPadding(dp(6),dp(6),dp(6),dp(6));
         nav.setContentDescription("Dolna nawigacja");
         String[] keys={"overview","calendar","announcements","messages","more"};
         String[] labels={"Start","Kalendarz","Ogłoszenia","Wiadomości","Więcej"};
         int[] icons={R.drawable.nav_home,R.drawable.nav_calendar,R.drawable.nav_announcements,R.drawable.nav_messages,R.drawable.nav_more};
         for(int i=0;i<keys.length;i++) {
             String key=keys[i]; Button tab=button(labels[i],()->{if(key.equals("more"))showMore();else select(key);},false);
-            tab.setTextSize(11); tab.setMaxLines(1);
+            tab.setTextSize(11); tab.setMaxLines(1);DesignUi.navigation(tab,false);
             tab.setAutoSizeTextTypeUniformWithConfiguration(dp(9),Math.max(dp(9),Math.round(11*getResources().getDisplayMetrics().scaledDensity)),1,android.util.TypedValue.COMPLEX_UNIT_PX);
             tab.setPadding(dp(1),dp(7),dp(1),dp(7)); tab.setMinHeight(dp(64)); tab.setMinimumHeight(dp(64));
             android.graphics.drawable.Drawable icon=getDrawable(icons[i]).mutate(); icon.setBounds(0,0,dp(22),dp(22));
@@ -515,16 +590,20 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         if(moreDialog!=null && moreDialog.isShowing())return;
         Dialog dialog=new Dialog(this); moreDialog=dialog;
         LinearLayout body=column(); body.setPadding(dp(18),dp(16),dp(18),dp(16)); body.setBackgroundColor(BG);
-        body.addView(text("Więcej",22,INK,true));
+        body.setBackground(DesignUi.surface(this,BG,24,false));
+        body.addView(text("Więcej",26,INK,true));
         ScrollView choices=new ScrollView(this); LinearLayout panels=column(); choices.addView(panels);
         for(String key:new String[]{"search","grades","homework","schedule","attendance","timetable","reminders","settings"}) {
             String label=title(key);
             if(key.equals("reminders") && reminderUi.pendingCount()>0)label+=" · "+reminderUi.pendingCount();
-            spaced(panels,button(label,()->{dialog.dismiss();select(key);},page.equals(key)));
+            Button choice=action(label,()->{dialog.dismiss();select(key);});choice.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);choice.setTextSize(16);choice.setMinHeight(dp(60));choice.setMinimumHeight(dp(60));
+            android.graphics.drawable.Drawable icon=getDrawable(sourceIcon(key)).mutate();icon.setTint(INK);icon.setBounds(0,0,dp(22),dp(22));choice.setCompoundDrawables(icon,null,null,null);choice.setCompoundDrawablePadding(dp(16));choice.setTextColor(INK);
+            panels.addView(choice,new LinearLayout.LayoutParams(-1,-2));divider(panels);
         }
         body.addView(choices,new LinearLayout.LayoutParams(-1,0,1));
         body.addView(button("Zamknij",dialog::dismiss,false));
         dialog.setContentView(body); dialog.setOnDismissListener(d->{if(moreDialog==dialog)moreDialog=null;}); dialog.show();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         dialog.getWindow().setGravity(Gravity.BOTTOM);
         dialog.getWindow().setLayout(-1,(int)(getResources().getDisplayMetrics().heightPixels*0.75));
     }
@@ -561,46 +640,45 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         }
     }
     private void overview() {
-        if (!state.optBoolean("ready")) { card().addView(text("Przygotowuję połączenie i lokalny zapis…", 16, MUTED, false)); return; }
+        if(!state.optBoolean("ready")){card().addView(text("Przygotowuję połączenie i lokalny zapis…",16,MUTED,false));return;}
         JSONObject updated=object(state,"updated_at");
-        if (!state.optBoolean("connected") && !state.optString("mode").equals("demo") && updated.length()==0) {
-            LinearLayout welcome = card(); welcome.addView(text("Dziennik pod ręką", 22, INK, true));
-            welcome.addView(text("Połącz szkolne konto Synergia lub poznaj aplikację na danych przykładowych.", 15, MUTED, false));
-            welcome.addView(button("Połącz konto Synergia", this::showLogin, true));
-            welcome.addView(button("Zobacz demo", repository::demo, false));
+        if(!state.optBoolean("connected")&&!state.optString("mode").equals("demo")&&updated.length()==0){
+            LinearLayout welcome=card();welcome.addView(text("Dziennik pod ręką",24,INK,true));
+            welcome.addView(text("Połącz szkolne konto Synergia lub poznaj aplikację na danych przykładowych.",15,MUTED,false));
+            welcome.addView(button("Połącz konto Synergia",this::showLogin,true));welcome.addView(button("Zobacz demo",repository::demo,false));
         }
-        spaced(list,button("Szukaj we wszystkich sekcjach",()->select("search"),false));
+        list.addView(text("Dobrego dnia.",28,INK,true));
+        spaced(list,text("Wszystkie szkolne sprawy w jednym miejscu.",14,MUTED,false));
+        LocalDate day=LocalDate.now().plusDays(overviewTomorrow?1:0);overviewDate=day;
+        LinearLayout selector=row();
+        weighted(selector,segment("Dzisiaj",()->{overviewTomorrow=false;renderList();},!overviewTomorrow));
+        weighted(selector,segment("Jutro",()->{overviewTomorrow=true;renderList();},overviewTomorrow));
+        TextView date=text(day.format(DateTimeFormatter.ofPattern("EEE, d MMM",Locale.forLanguageTag("pl"))),12,MUTED,false);
+        date.setGravity(Gravity.END);weighted(selector,date);spaced(list,selector);
         changeFeed();
-        LocalDate day=LocalDate.now().plusDays(overviewTomorrow?1:0); overviewDate=day;
-        LinearLayout dayCard=card(), selector=row();
-        weighted(selector,button("Dzisiaj",()->{overviewTomorrow=false;renderList();},!overviewTomorrow));
-        weighted(selector,button("Jutro",()->{overviewTomorrow=true;renderList();},overviewTomorrow)); dayCard.addView(selector);
-        dayCard.addView(text(day.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",Locale.forLanguageTag("pl"))),18,INK,true));
-        LinearLayout shortcuts=row();
-        long unread=items("messages").stream().filter(item->item.optBoolean("unread")).count();
-        weighted(shortcuts,button("Nieprzeczytane wiadomości · "+(updated.has("messages")?unread:"—"),()->select("messages"),false));
-        weighted(shortcuts,button("Oceny · "+(updated.has("grades")?items("grades").size():"—"),()->select("grades"),false));
-        spaced(list,shortcuts);
-        overviewGroup("Lekcje","timetable",items("timetable"),day,"Brak lekcji na ten dzień w pobranym planie.");
-        overviewGroup("Zadania do zrobienia","homework",items("homework"),day,"Brak zadań do zrobienia z terminem na ten dzień w pobranych danych.");
+        overviewGroup(overviewTomorrow?"Plan na jutro":"Plan na dzisiaj","timetable",items("timetable"),day,"Brak lekcji na ten dzień w pobranym planie.");
+        overviewGroup("Do zrobienia","homework",items("homework"),day,"Brak zadań do zrobienia z terminem na ten dzień w pobranych danych.");
         overviewGroup("Wydarzenia","schedule",items("schedule"),day,"Brak wydarzeń na ten dzień w pobranym terminarzu.");
         overviewGroup("Twoje przypomnienia","reminders",reminderUi.calendarItems(),day,"Brak zaplanowanych przypomnień na ten dzień.");
-        for(String kind:new String[]{"grades","messages","announcements","attendance"}) {
-            String error=object(state,"errors").optString(kind); if(!error.isEmpty())notice(title(kind)+": "+error);
+        for(String kind:new String[]{"grades","messages","announcements","attendance"}){
+            String error=object(state,"errors").optString(kind);if(!error.isEmpty())notice(title(kind)+": "+error);
         }
-        List<JSONObject> grades=items("grades"); grades.sort(Comparator.comparing((JSONObject v)->v.optString("when")).reversed());
-        if(!grades.isEmpty()) {
-            list.addView(text("Ostatnie oceny",19,INK,true));
+        List<JSONObject> grades=items("grades");grades.sort(Comparator.comparing((JSONObject v)->v.optString("when")).reversed());
+        if(!grades.isEmpty()){
+            sectionHeading("Ostatnie oceny","Wszystkie",()->select("grades"));
             for(JSONObject item:grades.subList(0,Math.min(3,grades.size())))entry(item,"grades");
         }
+        long unread=items("messages").stream().filter(item->item.optBoolean("unread")).count();
+        spaced(list,action("Nieprzeczytane wiadomości · "+(updated.has("messages")?unread:"—"),()->{unreadMessagesOnly=true;select("messages");}));
     }
+
     private void changeFeed() {
-        JSONObject feed=object(state,"change_feed");JSONArray items=feed.optJSONArray("items");
-        int total=items==null?0:items.length();LinearLayout c=card();
-        c.addView(text("Od ostatniego wejścia · "+total,20,INK,true));
+        JSONObject feed=object(state,"change_feed");JSONArray items=feed.optJSONArray("items");int total=items==null?0:items.length();
+        LinearLayout c=card();c.setPadding(dp(14),dp(12),dp(14),dp(2));c.setTag("home_changes");
+        c.addView(text("Od ostatniego wejścia · "+total,16,INK,true));
         double since=feed.optDouble("since",0);
-        c.addView(text(since>0?"Od wejścia "+DisplayData.date(java.time.Instant.ofEpochMilli((long)(since*1000)).toString()):"Nowe i zmienione wpisy wykryte od uruchomienia tej funkcji.",12,MUTED,false));
-        if(total==0) {c.addView(text("Brak nowych zmian. Pierwszy odczyt sekcji tworzy punkt odniesienia; kolejne pokażą tu nowości.",14,MUTED,false));return;}
+        c.addView(text(since>0?"Od wejścia "+DisplayData.date(java.time.Instant.ofEpochMilli((long)(since*1000)).toString()):"Nowe i zmienione wpisy od uruchomienia tej funkcji.",11,MUTED,false));
+        if(total==0){c.addView(text("Brak nowych zmian. Pierwszy odczyt sekcji tworzy punkt odniesienia; kolejne pokażą tu nowości.",14,MUTED,false));return;}
         String[] kinds={"all","grades","messages","announcements","schedule","attendance","timetable","homework"};
         String[] labels={"Wszystkie źródła","Oceny","Wiadomości","Ogłoszenia","Terminarz","Frekwencja","Plan lekcji","Zadania domowe"};
         Spinner source=new Spinner(this);source.setContentDescription("Źródło zmian na ekranie Start");source.setMinimumHeight(dp(48));
@@ -608,22 +686,28 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         int selected=Arrays.asList(kinds).indexOf(changesSource);if(selected<0){changesSource="all";selected=0;}source.setSelection(selected);c.addView(source);
         source.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
             public void onNothingSelected(AdapterView<?> parent){}
-            public void onItemSelected(AdapterView<?> parent,View v,int index,long id){if(source.isAttachedToWindow()&&!kinds[index].equals(changesSource)){changesSource=kinds[index];changesExpanded=false;renderList();scroll.scrollTo(0,0);}}
+            public void onItemSelected(AdapterView<?> parent,View v,int index,long id){
+                if(source.isAttachedToWindow()&&!kinds[index].equals(changesSource)){changesSource=kinds[index];renderList();scroll.scrollTo(0,0);}
+            }
         });
-        List<JSONObject> rows=new ArrayList<>();for(int i=0;i<total;i++){JSONObject row=items.optJSONObject(i);if(row!=null&&(changesSource.equals("all")||changesSource.equals(row.optString("kind"))))rows.add(row);}
-        if(rows.isEmpty())c.addView(text("Brak zmian z tego źródła.",14,MUTED,false));
-        for(JSONObject event:rows.subList(0,Math.min(changesExpanded?rows.size():3,rows.size()))) {
-            JSONObject item=object(event,"item");String kind=event.optString("kind"),type=switch(event.optString("event")){case "new"->"Nowy wpis";case "removed"->"Usunięty wpis";case "restored"->"Przywrócony wpis";default->"Zaktualizowany wpis";};
-            LinearLayout row=column();row.setPadding(0,dp(10),0,dp(10));row.setMinimumHeight(dp(64));
-            row.addView(text(title(kind)+" · "+type,12,TEAL,true));row.addView(text(item.optString("title"),16,INK,true));
-            String subtitle=item.optString("subtitle");if(!subtitle.isEmpty())row.addView(text(subtitle,13,MUTED,false));
-            row.addView(text("Data wpisu: "+DisplayData.date(item.optString("when")),12,MUTED,false));
-            row.setFocusable(true);row.setContentDescription("Zmiana: "+item.optString("title")+". Otwórz szczegóły");row.setOnClickListener(v->openChange(event));c.addView(row);
-            View divider=new View(this);divider.setBackgroundColor(0xffe7edf1);c.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));
+        int shown=0;
+        for(int i=0;i<total;i++){
+            JSONObject event=items.optJSONObject(i);if(event==null||(!changesSource.equals("all")&&!changesSource.equals(event.optString("kind"))))continue;
+            shown++;divider(c);
+            JSONObject item=object(event,"item");String kind=event.optString("kind");
+            String type=switch(event.optString("event")){case "new"->"Nowy wpis";case "removed"->"Usunięty wpis";case "restored"->"Przywrócony wpis";default->"Zaktualizowany wpis";};
+            LinearLayout entry=row();entry.setTag("home_change");entry.setGravity(Gravity.TOP);entry.setPadding(0,dp(12),0,dp(12));
+            addBadge(entry,item,kind,34);LinearLayout copy=column();weighted(entry,copy);
+            copy.addView(text(title(kind)+" · "+type,11,TEAL,true));copy.addView(text(item.optString("title"),14,INK,true));
+            if(!item.optString("subtitle").isEmpty())copy.addView(text(item.optString("subtitle"),12,MUTED,false));
+            copy.addView(text("Data wpisu: "+DisplayData.date(item.optString("when")),11,MUTED,false));
+            DesignUi.clickable(entry,Color.TRANSPARENT,8,()->openChange(event));copy.setOnClickListener(v->openChange(event));
+            entry.setContentDescription("Zmiana: "+item.optString("title")+". Otwórz szczegóły");c.addView(entry);
         }
-        if(rows.size()>3)c.addView(button(changesExpanded?"Zwiń zmiany":"Pokaż wszystkie zmiany · "+rows.size(),()->{changesExpanded=!changesExpanded;renderList();},false));
+        if(shown==0)c.addView(text("Brak zmian z tego źródła.",14,MUTED,false));
         if(feed.optBoolean("limited"))c.addView(text("Lista obejmuje ostatnie 300 zmienionych wpisów. Pełne dane znajdziesz w panelach.",12,MUTED,false));
     }
+
     private void openChange(JSONObject event) {
         String kind=event.optString("kind");JSONObject saved=object(event,"item");
         if(!event.optString("event").equals("removed"))for(JSONObject current:items(kind))if(current.optString("id").equals(saved.optString("id"))){details(current,kind);return;}
@@ -638,40 +722,78 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         List<JSONObject> entries=HomeDayData.onDay(source,day,kind.equals("reminders"));
         int completed=kind.equals("homework")?(int)entries.stream().filter(homeworkStatus::done).count():0;
         if(kind.equals("homework"))entries.removeIf(homeworkStatus::done);
-        LinearLayout c=card(), header=row();
         boolean loaded=kind.equals("reminders")?remindersReady:object(state,"updated_at").has(kind)&&(!kind.equals("homework")||homeworkStatus.ready());
-        weighted(header,text(label+" · "+(loaded?entries.size():"—"),18,INK,true));
-        header.addView(button("Wszystkie",()->{if(kind.equals("homework")){homeworkStatusFilter=2;homeworkUpcoming=false;}select(kind);},false)); c.addView(header);
+        boolean lessons=kind.equals("timetable");
+        sectionHeading(label+" · "+(loaded?entries.size():"—"),"Wszystkie",lessons?null:()->{
+            if(kind.equals("homework")){homeworkStatusFilter=2;homeworkUpcoming=false;}select(kind);
+        });
+        LinearLayout c=card();c.setTag(lessons?"home_plan":"home_"+kind);
+        if(lessons)c.setPadding(0,0,0,0);
         if(kind.equals("homework")&&completed>0)c.addView(text("Zrobione na ten dzień: "+completed+" · dostępne w panelu Zadania",12,TEAL,false));
         String fetched=object(state,"updated_at").optString(kind),error=kind.equals("reminders")?reminderUi.calendarError():object(state,"errors").optString(kind);
-        if(!error.isEmpty())c.addView(text("Ostatni odczyt nie udał się: "+error,13,0xff994835,false));
-        if(kind.equals("reminders")) { if(!remindersReady)c.addView(text("Wczytuję przypomnienia…",13,MUTED,false)); }
-        else c.addView(text(fetched.isEmpty()?"Sekcja jeszcze niepobrana.":"Ostatni odczyt: "+DisplayData.date(fetched)+(state.optString("mode").equals("offline")?" · kopia lokalna":""),12,MUTED,false));
-        if(entries.isEmpty() && (kind.equals("reminders")?remindersReady && error.isEmpty():!fetched.isEmpty())) c.addView(text(empty,14,MUTED,false));
-        if(HomeDayData.unknownDates(source)>0)c.addView(text("Wpisy bez rozpoznanej daty znajdziesz w pełnym panelu.",12,MUTED,false));
-        if(kind.equals("timetable") && HomeDayData.outsideTimetableRange(day,fetched) && !state.optString("mode").equals("demo")) c.addView(text("Ten dzień jest poza zakresem ostatniego odczytu planu. Odśwież dane.",12,0xff994835,false));
-        for(JSONObject item:entries) {
-            LinearLayout row=column(); row.setPadding(0,dp(10),0,dp(10)); row.setMinimumHeight(dp(56));
-            row.addView(text(HomeDayData.timeLabel(item.optString("when")),12,TEAL,true));
-            row.addView(text(item.optString("title","Bez tytułu"),16,INK,true));
-            String subtitle=item.optString("subtitle"); if(!subtitle.isEmpty())row.addView(text(subtitle,13,MUTED,false));
-            row.setOnClickListener(v->{if(kind.equals("reminders"))reminderUi.open(item.optString("reminder_id"));else details(item,kind);});
-            row.setFocusable(true); row.setContentDescription(item.optString("title")+". Otwórz szczegóły"); c.addView(row);
-            if(kind.equals("homework"))homeworkStatus.bind(c,item);
-            View line=new View(this); line.setBackgroundColor(0xffe7edf1); c.addView(line,new LinearLayout.LayoutParams(-1,dp(1)));
+        LinearLayout metadata=column();metadata.setPadding(lessons?dp(14):0,dp(6),lessons?dp(14):0,dp(6));
+        if(!error.isEmpty())metadata.addView(text("Ostatni odczyt nie udał się: "+error,13,0xff994835,false));
+        if(kind.equals("reminders")){if(!remindersReady)metadata.addView(text("Wczytuję przypomnienia…",13,MUTED,false));}
+        else metadata.addView(text(fetched.isEmpty()?"Sekcja jeszcze niepobrana.":"Ostatni odczyt: "+DisplayData.date(fetched)+(state.optString("mode").equals("offline")?" · kopia lokalna":""),11,MUTED,false));
+        if(entries.isEmpty()&&(kind.equals("reminders")?remindersReady&&error.isEmpty():!fetched.isEmpty()))metadata.addView(text(empty,14,MUTED,false));
+        if(HomeDayData.unknownDates(source)>0)metadata.addView(text("Wpisy bez rozpoznanej daty znajdziesz w pełnym panelu.",12,MUTED,false));
+        if(lessons&&HomeDayData.outsideTimetableRange(day,fetched)&&!state.optString("mode").equals("demo"))metadata.addView(text("Ten dzień jest poza zakresem ostatniego odczytu planu. Odśwież dane.",12,0xff994835,false));
+        // Errors remain above the retained entries; ordinary read times follow the complete list.
+        boolean warning=!error.isEmpty()||fetched.isEmpty()||HomeDayData.unknownDates(source)>0||(lessons&&HomeDayData.outsideTimetableRange(day,fetched)&&!state.optString("mode").equals("demo"));
+        if(warning)c.addView(metadata);
+        JSONObject focused=null;java.time.LocalTime now=java.time.LocalTime.now();
+        for(JSONObject item:entries)if(lessons&&focused==null){
+            java.time.LocalTime start=HomeDayData.time(item.optString("when")),end=SchoolPresentation.end(item.optString("subtitle"),item.optString("details"));
+            if(start!=null&&(day.isAfter(LocalDate.now())||(day.equals(LocalDate.now())&&(end!=null?now.isBefore(end):!now.isAfter(start)))))focused=item;
         }
+        int number=0;
+        for(JSONObject item:entries){
+            number++;
+            if(lessons){
+                boolean active=item==focused;
+                LinearLayout lesson=row();lesson.setTag("home_lesson");lesson.setGravity(Gravity.CENTER_VERTICAL);lesson.setPadding(dp(14),dp(12),dp(14),dp(12));lesson.setMinimumHeight(dp(68));
+                LinearLayout times=column();java.time.LocalTime start=HomeDayData.time(item.optString("when")),end=SchoolPresentation.end(item.optString("subtitle"),item.optString("details"));
+                times.addView(text(start==null?"—":start.format(DateTimeFormatter.ofPattern("HH:mm")),12,active?WHITE:INK,true));
+                if(end!=null)times.addView(text(end.format(DateTimeFormatter.ofPattern("HH:mm")),11,active?0xffbdd8d6:MUTED,false));
+                LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(dp(51),-2);tp.rightMargin=dp(10);lesson.addView(times,tp);
+                LinearLayout copy=column();weighted(lesson,copy);copy.addView(text(item.optString("title","Bez tytułu"),14,active?WHITE:INK,true));
+                String subtitle=SchoolPresentation.lessonSubtitle(item.optString("subtitle"));if(!subtitle.isEmpty())copy.addView(text(subtitle,12,active?0xffbdd8d6:MUTED,false));
+                if(start==null)copy.addView(text("Bez podanej godziny",11,MUTED,false));
+                TextView index=text(active?(day.isAfter(LocalDate.now())?"Pierwsza":start!=null&&!now.isBefore(start)?"Teraz":"Następna"):Integer.toString(number),11,active?0xffbfeada:MUTED,false);
+                index.setPadding(dp(7),dp(4),dp(7),dp(4));if(active)index.setBackground(DesignUi.surface(this,0xff31585b,6,false));lesson.addView(index);
+                DesignUi.clickable(lesson,active?DARK:WHITE,0,()->details(item,kind));copy.setOnClickListener(v->details(item,kind));
+                lesson.setContentDescription(item.optString("title")+". "+HomeDayData.timeLabel(item.optString("when"))+". Otwórz szczegóły");c.addView(lesson);divider(c);
+            }else{
+                LinearLayout row=row();row.setGravity(Gravity.TOP);row.setPadding(0,dp(10),0,dp(10));row.setMinimumHeight(dp(56));
+                if(kind.equals("homework"))homeworkStatus.bindCompact(row,item);
+                else addBadge(row,item,kind,34);
+                LinearLayout copy=column();weighted(row,copy);
+                copy.addView(text(item.optString("title","Bez tytułu"),15,INK,true));
+                if(!item.optString("subtitle").isEmpty())copy.addView(text(item.optString("subtitle"),12,MUTED,false));
+                java.time.LocalTime time=HomeDayData.time(item.optString("when"));if(time!=null)copy.addView(text(time.format(DateTimeFormatter.ofPattern("HH:mm")),12,TEAL,true));
+                Runnable open=()->{if(kind.equals("reminders"))reminderUi.open(item.optString("reminder_id"));else details(item,kind);};
+                DesignUi.clickable(row,Color.TRANSPARENT,8,open);copy.setOnClickListener(v->open.run());row.setContentDescription(item.optString("title")+". Otwórz szczegóły");
+                c.addView(row);divider(c);
+            }
+        }
+        if(lessons&&!entries.isEmpty()){
+            JSONObject last=entries.get(entries.size()-1);
+            java.time.LocalTime end=SchoolPresentation.end(last.optString("subtitle"),last.optString("details"));
+            if(end!=null){TextView endText=text("Koniec lekcji o "+end.format(DateTimeFormatter.ofPattern("HH:mm")),12,MUTED,false);endText.setPadding(dp(14),dp(10),dp(14),dp(6));c.addView(endText);}
+        }
+        if(!warning)c.addView(metadata);
     }
 
     private void calendar(List<JSONObject> rows) {
         YearMonth shown=shownCalendarMonth();LocalDate chosen=shownCalendarDay();
         LinearLayout c = card(), navigation = row();
-        navigation.addView(button("‹", () -> { calendarMonth(shown.minusMonths(1)); calendarDay(null); renderList(); }, false));
+        navigation.addView(action("‹", () -> { calendarMonth(shown.minusMonths(1)); calendarDay(null); renderList(); }));
         TextView monthName = text(shown.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.forLanguageTag("pl"))), 17, INK, true);
         monthName.setGravity(Gravity.CENTER); weighted(navigation, monthName);
-        navigation.addView(button("›", () -> { calendarMonth(shown.plusMonths(1)); calendarDay(null); renderList(); }, false)); c.addView(navigation);
+        navigation.addView(action("›", () -> { calendarMonth(shown.plusMonths(1)); calendarDay(null); renderList(); })); c.addView(navigation);
         LinearLayout shortcuts = row();
-        weighted(shortcuts, button("Dzisiaj", () -> { calendarMonth(YearMonth.now()); calendarDay(LocalDate.now()); renderList(); }, false));
-        weighted(shortcuts, button("Cały miesiąc", () -> { calendarDay(null); renderList(); }, false)); c.addView(shortcuts);
+        weighted(shortcuts, action("Dzisiaj", () -> { calendarMonth(YearMonth.now()); calendarDay(LocalDate.now()); renderList(); }));
+        weighted(shortcuts, action("Cały miesiąc", () -> { calendarDay(null); renderList(); })); c.addView(shortcuts);
         LinearLayout weekdays = row(); for (String label : new String[]{"Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"}) {
             TextView v = text(label, 11, MUTED, true); v.setGravity(Gravity.CENTER); weighted(weekdays, v);
         } c.addView(weekdays);
@@ -682,11 +804,13 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
             for (int col = 0; col < 7; col++) {
                 LocalDate day = start.plusDays(index + col);
                 long count = rows.stream().filter(v -> day.equals(DisplayData.day(v.optString("when")))).count();
-                String value = Integer.toString(day.getDayOfMonth()) + (count > 0 ? "\n" + count + " wpis." : "");
+                String value = Integer.toString(day.getDayOfMonth()) + (count > 0 ? "\n•" : "\n ");
                 Button b = button(value, () -> { calendarMonth(YearMonth.from(day)); calendarDay(day.equals(chosen)?null:day); renderList(); }, day.equals(chosen));
-                b.setPadding(0, dp(3), 0, dp(3)); b.setTextSize(10); b.setMinWidth(0); b.setMinimumWidth(0);
+                b.setPadding(0,dp(2),0,dp(2));b.setTextSize(12);b.setMinWidth(0);b.setMinimumWidth(0);b.setMinHeight(dp(48));b.setMinimumHeight(dp(48));
+                if(!day.equals(chosen))DesignUi.quiet(b,false);
+                if(day.equals(LocalDate.now())&&!day.equals(chosen))b.setBackground(DesignUi.surface(this,DesignUi.MINT,12,false));
                 if (!YearMonth.from(day).equals(shown)) b.setAlpha(0.45f);
-                if (day.equals(LocalDate.now())) b.setTypeface(null, Typeface.BOLD);
+                if (day.equals(LocalDate.now())) b.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));
                 b.setContentDescription(DisplayData.date(day.toString()) + (page.equals("calendar")?", wpisów: ":", wydarzeń: ") + count);
                 weighted(week, b);
             } c.addView(week);

@@ -8,10 +8,10 @@ import org.json.*;
 public final class CalendarData {
     private CalendarData() { }
     public static String label(String kind) {
-        return kind.equals("schedule")?"Terminarz":kind.equals("homework")?"Zadania domowe":"Przypomnienia";
+        return kind.equals("timetable")?"Plan lekcji":kind.equals("schedule")?"Terminarz":kind.equals("homework")?"Zadania domowe":"Przypomnienia";
     }
     public static int color(String kind) {
-        return kind.equals("schedule")?0xff087e8b:kind.equals("homework")?0xff915b13:0xff7352a3;
+        return (kind.equals("timetable")||kind.equals("schedule"))?DesignUi.TEAL:kind.equals("homework")?0xff915b13:0xff7352a3;
     }
     public static List<JSONObject> combine(List<JSONObject> events,List<JSONObject> tasks,JSONArray reminders,String profile,boolean demo) {
         List<JSONObject> result=new ArrayList<>();

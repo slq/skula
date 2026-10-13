@@ -26,6 +26,7 @@ with zipfile.ZipFile(source,"w",zipfile.ZIP_DEFLATED) as out:
         lower=relative.lower()
         if any(x in lower.split("/") for x in [".tools","artifacts","build",".git",".gradle"]):continue
         if f.name in ["signing.properties","local.properties"] or f.suffix.lower() in [".aes",".p12",".pfx",".key",".jks",".keystore"]:continue
-        if f.suffix.lower() not in allowed_suffixes and f.name not in ["gradlew",".gitignore","LICENSE"]:continue
+        is_documentation_image=relative.startswith("skula-android/docs/screenshots/") and f.suffix.lower()==".png"
+        if not is_documentation_image and f.suffix.lower() not in allowed_suffixes and f.name not in ["gradlew",".gitignore","LICENSE"]:continue
         out.write(f,relative)
 print("Metadane i źródła wydania przygotowane: "+name)

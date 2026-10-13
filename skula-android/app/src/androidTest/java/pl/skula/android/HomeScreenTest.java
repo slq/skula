@@ -54,13 +54,13 @@ public class HomeScreenTest {
         JSONObject foreign=store.save(null,"messages","synthetic-foreign-source","other",false,"SYNTHETIC_FOREIGN","FOREIGN_NOTE",own.getLong("due"),false,now);
         try(ActivityScenario<MainActivity> scenario=ActivityScenario.launch(new Intent(context(),MainActivity.class).putExtra("demo",true))) {
             ready(scenario);
-            scenario.onActivity(a->{View root=a.getWindow().getDecorView();assertNotNull(find(root,"Lekcje · 4"));assertNotNull(find(root,"Matematyka"));assertNull(find(root,"Historia"));NavigationTestSupport.button(root,"Jutro").performClick();});
+            scenario.onActivity(a->{View root=a.getWindow().getDecorView();assertNotNull(find(root,"Plan na dzisiaj · 4"));assertNotNull(find(root,"Matematyka"));assertNull(find(root,"Historia"));NavigationTestSupport.button(root,"Jutro").performClick();});
             // Reminder loading is asynchronous and must finish before asserting the new local day.
             long until=System.currentTimeMillis()+5000;boolean[] found={false};
             while(System.currentTimeMillis()<until){scenario.onActivity(a->found[0]=find(a.getWindow().getDecorView(),"SYNTHETIC_HOME_NOTE")!=null);if(found[0])break;Thread.sleep(30);}assertTrue(found[0]);
-            scenario.onActivity(a->{View root=a.getWindow().getDecorView();assertNotNull(find(root,"Lekcje · 1"));assertNotNull(find(root,"Historia"));assertNotNull(find(root,"Ćwiczenia z ułamków"));assertNotNull(find(root,"Matematyka · sprawdzian"));assertNull(find(root,"FOREIGN_NOTE"));});
+            scenario.onActivity(a->{View root=a.getWindow().getDecorView();assertNotNull(find(root,"Plan na jutro · 1"));assertNotNull(find(root,"Historia"));assertNotNull(find(root,"Ćwiczenia z ułamków"));assertNotNull(find(root,"Matematyka · sprawdzian"));assertNull(find(root,"FOREIGN_NOTE"));});
             scenario.recreate();ready(scenario);
-            scenario.onActivity(a->{View root=a.getWindow().getDecorView();assertNotNull(find(root,"Historia"));assertNotNull(find(root,"Ćwiczenia z ułamków"));((View)find(root,"Ćwiczenia z ułamków").getParent()).performClick();});
+            scenario.onActivity(a->{View root=a.getWindow().getDecorView();assertNotNull(find(root,"Historia"));assertNotNull(find(root,"Ćwiczenia z ułamków"));((View)find(root.findViewWithTag("home_homework"),"Ćwiczenia z ułamków").getParent()).performClick();});
             long dialogDeadline=System.currentTimeMillis()+5000;boolean detail=false;
             while(System.currentTimeMillis()<dialogDeadline){android.view.accessibility.AccessibilityNodeInfo root=InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();if(root!=null&&!root.findAccessibilityNodeInfosByText("Pobierz treść zadania").isEmpty()){detail=true;for(android.view.accessibility.AccessibilityNodeInfo node:root.findAccessibilityNodeInfosByText("Zamknij"))node.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK);break;}Thread.sleep(30);}assertTrue("Home homework entry must open its original detail dialog",detail);
             scenario.onActivity(a->{NavigationTestSupport.open(a,"Wiadomości");assertTrue(NavigationTestSupport.button(a.getWindow().getDecorView(),"Wiadomości").isSelected());});

@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 final class NavigationTestSupport {
     static Button button(View root,String label) {
         if(root instanceof Button && !(root instanceof CompoundButton) && (((Button)root).getText().toString().equals(label)
+                || label.equals(String.valueOf(root.getContentDescription()))
                 || (label.equals("Przypomnienia")&&((Button)root).getText().toString().startsWith("Przypomnienia ·"))))return (Button)root;
         if(root instanceof ViewGroup)for(int i=0;i<((ViewGroup)root).getChildCount();i++) {
             Button result=button(((ViewGroup)root).getChildAt(i),label);if(result!=null)return result;

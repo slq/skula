@@ -64,12 +64,15 @@ public final class HomeworkCompletionUi {
         }
         refreshing=false;changed.run();
     }
-    public void bind(LinearLayout parent,JSONObject item) {
+    public void bind(LinearLayout parent,JSONObject item) { bind(parent,item,false); }
+    public void bindCompact(LinearLayout parent,JSONObject item) { bind(parent,item,true); }
+    private void bind(LinearLayout parent,JSONObject item,boolean compact) {
         String id=item.optString("id"),key=key(id);CheckBox checkbox=new CheckBox(activity);
-        checkbox.setText("Zrobione");checkbox.setTextColor(0xff183047);checkbox.setButtonTintList(ColorStateList.valueOf(ButtonStyles.TEAL));
+        checkbox.setText(compact?"":"Zrobione");checkbox.setTextColor(DesignUi.INK);checkbox.setButtonTintList(ColorStateList.valueOf(ButtonStyles.TEAL));
         checkbox.setMinHeight(ButtonStyles.dp(activity,48));checkbox.setContentDescription("Zrobione: "+item.optString("title"));
         checkbox.setChecked(ready&&key!=null&&completed.contains(key));checkbox.setEnabled(editable()&&key!=null);
-        bindings.add(new Binding(checkbox,key,id));parent.addView(checkbox);
+        bindings.add(new Binding(checkbox,key,id));
+        if(compact)parent.addView(checkbox,new LinearLayout.LayoutParams(ButtonStyles.dp(activity,48),ButtonStyles.dp(activity,48)));else parent.addView(checkbox);
         checkbox.setOnCheckedChangeListener((button,value)->{if(!refreshing)set(key,value);});
     }
     private void set(String key,boolean value) {

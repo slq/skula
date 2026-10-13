@@ -9,9 +9,9 @@ Kryteria akceptacji:
 - Domyślny Start pokazuje Dzisiaj; Jutro przełącza dzień według lokalnej daty telefonu. Wybrany dzień zachowuje się przy odtworzeniu ekranu i podczas przechodzenia do innych paneli.
 - Lekcje z planu, terminy wykonania zadań i wydarzenia z terminarza są grupowane osobno. Widoczne są wszystkie pobrane wpisy na wybrany dzień, ich godziny oraz temat i opis pomocniczy. Wpisy w grupie są uporządkowane godziną; wpisy bez godziny są na początku i nie otrzymują fikcyjnej godziny.
 - Przypomnienia obejmują tylko zaplanowane wpisy bieżącego profilu lub osobnego profilu demo. Historia wykonanych nie trafia na plan dnia.
-- Każda grupa ma licznik i przycisk Wszystkie otwierający pełny panel. W przypadku niepobranej sekcji licznik pokazuje kreskę, a komunikat odróżnia brak odczytu od pustej listy.
+- Każda grupa ma licznik. Plan na dzisiaj/jutro pokazuje wszystkie lekcje bez dodatkowego przycisku; pozostałe grupy mają przycisk Wszystkie otwierający pełny panel. W przypadku niepobranej sekcji licznik pokazuje kreskę, a komunikat odróżnia brak odczytu od pustej listy.
 - Dotknięcie wpisu otwiera istniejące szczegóły, w tym pobranie treści zadania lub edycję przypomnienia. Start nie pobiera treści automatycznie.
-- Skróty pokazują liczbę nieprzeczytanych wiadomości w pobranych nagłówkach i liczbę pobranych ocen. Poniżej planu dnia pozostają do trzech ostatnich ocen.
+- Skrót pokazuje liczbę nieprzeczytanych wiadomości w pobranych nagłówkach. Poniżej planu dnia pozostają do trzech ostatnich ocen z przejściem do wszystkich.
 
 ## US-HOME-02 — stałe menu telefonu
 
@@ -45,7 +45,7 @@ Kryteria akceptacji:
 
 - Sekcja **Od ostatniego wejścia** znajduje się nad planem Dzisiaj/Jutro. Obejmuje oceny, wiadomości, ogłoszenia, terminarz, frekwencję, plan lekcji i zadania domowe.
 - Pozycja pokazuje panel, rodzaj zmiany, temat, opis pomocniczy i datę szkolnego wpisu. Nowy wpis jest odróżniony od zaktualizowanego. Zniknięcie wydarzenia/lekcji w nadal pobieranym zakresie ma osobne oznaczenie i zachowaną kopię metadanych.
-- Domyślnie widać trzy ostatnio wykryte zmiany. **Pokaż wszystkie zmiany** rozwija listę. Filtr źródła pozwala np. zobaczyć tylko Terminarz albo Oceny.
+- Wszystkie zapisane zmiany są od razu rozwinięte w jednej przewijanej stronie, bez skracania do trzech pozycji i bez przycisku rozwijania. Filtr źródła pozwala np. zobaczyć tylko Terminarz albo Oceny.
 - Dotknięcie pozycji otwiera dotychczasowe szczegóły wpisu bez szukania go w panelu. Jeśli źródła nie ma już na bieżącej liście, widoczna jest zachowana kopia z wyjaśnieniem; pełna treść nie jest automatycznie pobierana.
 - Zmiany są zbierane podczas odczytów w tle i podczas używania aplikacji. Kolejny odczyt bez zmian nie kasuje listy; aktualizacje tego samego ID są połączone w jedną najnowszą pozycję.
 - Wejście oznacza powrót do aplikacji po jej opuszczeniu lub zimne uruchomienie. Przełączenie panelu, otwarcie dialogu, uzyskanie focusu i odtworzenie ekranu po zmianie konfiguracji nie zaczynają nowego okresu. Przy nowym wejściu filtr wraca do wszystkich źródeł.
@@ -62,3 +62,8 @@ Wersja 0.8.0 i starsze nie zapisywały historii między wizytami; zmian utracony
 Od 0.10.0 Start ma skrót „Szukaj we wszystkich sekcjach”, dostępny również jako „Szukaj” pod Więcej. Wyszukiwarka jest dodatkowym ekranem, zachowującym dotychczasowy Start oraz filtry poszczególnych paneli. [Historie i kryteria](SEARCH.md).
 
 Od 0.10.1 Ogłoszenia zajmują trzecie miejsce dolnego menu. Zadania domowe są pod Więcej, jak Terminarz; nadal można je otwierać i oznaczać w kalendarzu oraz planie dnia na Starcie. Wybranie Zadania domowe wyróżnia Więcej, a Ogłoszeń — ich własną zakładkę.
+
+
+## Wygląd — zaakceptowany wariant A
+
+Jasne tło, turkusowe akcenty, ikony w stałym menu i kompaktowy nagłówek z wyszukiwaniem, odświeżaniem i kontem. Pełny plan dnia pokazuje godziny początku i końca, przedmiot oraz dostępne informacje o nauczycielu/sali. Bieżąca lub najbliższa lekcja jest wyróżniona; brakujących godzin aplikacja nie dopowiada. Powitanie nie zakłada znajomości imienia użytkownika. Wszystkie komunikaty o kopii offline, błędach i niepobranych sekcjach pozostają dostępne.

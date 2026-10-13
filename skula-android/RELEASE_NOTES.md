@@ -1,8 +1,10 @@
-Skula Android 0.13.1
+Skula Android 0.14.0
 
-- Przycisk „Odśwież” pobiera dane od razu, bez czekania na przerwę 5 minut. Możesz ponowić pobranie po zakończeniu poprzedniej operacji.
-- Automatyczne odczyty po otwarciu, powrocie do aplikacji i w tle nadal zachowują limit 5 minut od ostatniej próby, także ręcznej.
-- Poprawiono adres aktualizatora: kolejne wydania pobierane są z repozytorium slq/skula.
-- Uaktualniono opis odświeżania w Ustawieniach i dokumentacji.
+- Nowy, jasny interfejs: turkusowe akcenty, czytelne listy, ikony i uporządkowana nawigacja.
+- Wszystkie nowości od ostatniego wejścia są od razu rozwinięte na Starcie.
+- Start pokazuje cały plan na dzisiaj lub jutro: wszystkie lekcje, godziny i dostępne informacje o salach.
+- Wiadomości mają filtr nieprzeczytanych, a kalendarz obejmuje również lekcje i widok listy.
+- W szczegółach wiadomości, ogłoszeń i terminarza dostępny jest przycisk Kopiuj. Zrzuty ekranu działają poza oknem logowania.
+- Uporządkowana dokumentacja projektu ze zrzutami działającej aplikacji.
 
-Aktualizacja Skuli 0.13.0 zachowuje dane: pakiet pl.skula.android i dotychczasowy podpis pozostają zgodne. Instalacja wymaga potwierdzenia Androida. Blokady zapytań nałożone przez dziennik nadal obowiązują.
+Aktualizacja z 0.13.1 zachowuje dane, konto i przypomnienia: pakiet pl.skula.android i podpis pozostają zgodne. Instalację zatwierdzasz w systemie Android. Harmonogram odczytów i zasady ochrony danych pozostają zachowane.

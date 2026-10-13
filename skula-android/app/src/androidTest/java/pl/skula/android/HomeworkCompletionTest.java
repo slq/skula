@@ -105,7 +105,7 @@ public class HomeworkCompletionTest {
         try(ActivityScenario<MainActivity> scenario=ActivityScenario.launch(new Intent(context(),MainActivity.class).putExtra("demo",true))) {
             ready(scenario);scenario.onActivity(a->NavigationTestSupport.button(a.getWindow().getDecorView(),"Jutro").performClick());waitCheckbox(scenario,false);
             scenario.onActivity(a->checkbox(a.getWindow().getDecorView(),"Ćwiczenia z ułamków").performClick());
-            long until=System.currentTimeMillis()+5000;boolean[] removed={false};while(System.currentTimeMillis()<until){scenario.onActivity(a->removed[0]=find(a.getWindow().getDecorView(),"Zrobione na ten dzień: 1 · dostępne w panelu Zadania")!=null&&find(a.getWindow().getDecorView(),"Ćwiczenia z ułamków")==null);if(removed[0])break;Thread.sleep(30);}assertTrue(removed[0]);
+            long until=System.currentTimeMillis()+5000;boolean[] removed={false};while(System.currentTimeMillis()<until){scenario.onActivity(a->removed[0]=find(a.getWindow().getDecorView(),"Zrobione na ten dzień: 1 · dostępne w panelu Zadania")!=null&&find(a.getWindow().getDecorView().findViewWithTag("home_homework"),"Ćwiczenia z ułamków")==null);if(removed[0])break;Thread.sleep(30);}assertTrue(removed[0]);
             scenario.onActivity(a->NavigationTestSupport.open(a,"Kalendarz"));
             if(java.time.YearMonth.from(LocalDate.now().plusDays(1)).isAfter(java.time.YearMonth.now()))scenario.onActivity(a->NavigationTestSupport.button(a.getWindow().getDecorView(),"›").performClick());
             waitCheckbox(scenario,true);scenario.onActivity(a->checkbox(a.getWindow().getDecorView(),"Ćwiczenia z ułamków").performClick());waitCheckbox(scenario,false);
