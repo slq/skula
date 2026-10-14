@@ -75,6 +75,9 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--size", default="1280x880")
     parser.add_argument("--output", default="docs/screenshots")
+    parser.add_argument("--pages", nargs="+",
+                        choices=("overview", "messages", "schedule", "settings", "grades", "grades-subjects"),
+                        default=("overview", "messages", "schedule", "settings", "grades", "grades-subjects"))
     args=parser.parse_args()
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
     controller=Controller(storage=DemoStorage(), notifier=lambda *a:True, start_ticker=False)
@@ -90,8 +93,11 @@ def main():
     app.root.update()
     output=Path(args.output); output.mkdir(parents=True,exist_ok=True)
     try:
-        for page in ("overview","messages","schedule","settings"):
-            app.select_page(page)
+        for page in args.pages:
+            app.select_page("grades" if page == "grades-subjects" else page)
+            if page.startswith("grades"):
+                view = app.views["grades"]
+                view.set_mode("subject" if page == "grades-subjects" else "date")
             if page=="messages":
                 view=app.views[page]
                 row=view.tree.get_children()[0]

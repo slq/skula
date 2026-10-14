@@ -511,9 +511,11 @@ class SkulaConnector:
                             "Semestr": grade.semester})
                         if flavor == "numeric":
                             details += f"\nWaga: {grade.weight}\nWliczana do średniej: {'tak' if grade.counts else 'nie'}"
-                        result.append(_item("grades", _identifier("grades", *identity),
+                        item = _item("grades", _identifier("grades", *identity),
                             f"{subject}: {value}" if value else f"{subject} — ocena opisowa",
-                            category or grade.teacher, when, details))
+                            category or grade.teacher, when, details)
+                        item["subject"] = plain_text(subject).strip()
+                        result.append(item)
         return result
 
     def _announcements(self):

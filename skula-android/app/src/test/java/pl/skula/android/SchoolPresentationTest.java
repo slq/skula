@@ -33,4 +33,21 @@ public class SchoolPresentationTest {
         assertEquals("—",SchoolPresentation.initials("123"));
         assertEquals("—",SchoolPresentation.initials(""));
     }
+
+
+    @Test public void gradeSubjectsSupportMetadataAndOlderCachedFormats() {
+        assertEquals("Matematyka",SchoolPresentation.gradeSubject(" Matematyka ","5",""));
+        assertEquals("Wiedza o społeczeństwie",SchoolPresentation.gradeSubject("","5","Ocena: 5\nPrzedmiot: Wiedza o społeczeństwie\nSemestr: 1"));
+        assertEquals("Edukacja: bezpieczeństwo",SchoolPresentation.gradeSubject("","Edukacja: bezpieczeństwo: 4+",""));
+        assertEquals("Plastyka",SchoolPresentation.gradeSubject("","Plastyka — ocena opisowa",""));
+        assertEquals("Język angielski",SchoolPresentation.gradeSubject("","Język angielski · 5",""));
+        assertEquals("Bez przedmiotu",SchoolPresentation.gradeSubject(null,null,null));
+    }
+    @Test public void gradeDatesUseActualInstantsAndLeaveUnknownDatesUnsorted() {
+        assertEquals(java.time.Instant.parse("2026-10-14T08:00:00Z"),SchoolPresentation.gradeTime("2026-10-14T10:00:00+02:00"));
+        assertNotNull(SchoolPresentation.gradeTime("2026-10-14 10:00:00"));
+        assertNotNull(SchoolPresentation.gradeTime("2026-10-14"));
+        assertNull(SchoolPresentation.gradeTime("brak daty"));
+        assertNull(SchoolPresentation.gradeTime(""));
+    }
 }

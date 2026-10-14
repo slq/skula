@@ -199,6 +199,7 @@ def test_academic_mapping_keeps_identity_when_a_grade_changes(monkeypatch):
     assert first["title"] == "Matematyka: 4+"
     assert second["title"] == "Matematyka: 5-"
     assert first["when"] == "2026-10-07"
+    assert first["subject"] == second["subject"] == "Matematyka"
     assert "4.5" not in first["details"]
     assert first["url"] == c.SECTION_URLS["grades"]
 

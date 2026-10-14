@@ -55,7 +55,7 @@ Wersja desktopowa korzysta z tych samych kolorów i ikon, z boczną nawigacją o
 
 Potrzebujesz standardowego Pythona **3.11 lub nowszego** z `pip` oraz `tkinter`.
 
-1. Pobierz i rozpakuj [Skula Windows 0.2.0](https://github.com/slq/skula/releases/tag/windows-v0.2.0) albo sklonuj repozytorium.
+1. Pobierz i rozpakuj [Skula Windows 0.3.0](https://github.com/slq/skula/releases/tag/windows-v0.3.0) albo sklonuj repozytorium.
 2. Uruchom [Demo.cmd](skula-app/Demo.cmd), aby obejrzeć aplikację na fikcyjnych danych.
 3. Uruchom [Start.cmd](skula-app/Start.cmd), aby połączyć konto Synergia.
 

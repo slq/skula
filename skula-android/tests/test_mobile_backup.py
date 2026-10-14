@@ -57,6 +57,26 @@ class BackupTests(unittest.TestCase):
         self.svc.journal.begin_visit(self.svc.clock())
         data=self.backup();data["change_journal"]["current"][0]["item"]["unread"]={"password":"test-only"}
         with self.assertRaises(ValueError):validate(json.dumps(data))
+    def test_grade_subjects_round_trip_and_legacy_copies_still_import(self):
+        data=self.backup()
+        original=data["snapshot"]["sections"]["grades"][0]
+        self.assertTrue(original["subject"])
+        restored=MobileService(Fake)
+        restored.import_portable_json(json.dumps(data))
+        self.assertEqual(original["subject"],restored.tracker.sections["grades"][0]["subject"])
+        for item in data["snapshot"]["sections"]["grades"]:
+            item.pop("subject",None)
+        restored.import_portable_json(json.dumps(data))
+        self.assertEqual(len(data["snapshot"]["sections"]["grades"]),len(restored.tracker.sections["grades"]))
+        self.assertEqual(original["title"],restored.tracker.sections["grades"][0]["title"])
+    def test_subject_metadata_rejects_objects_and_other_section_fields(self):
+        for invalid in ({"password":"secret"},42,["Matematyka"]):
+            data=self.backup()
+            data["snapshot"]["sections"]["grades"][0]["subject"]=invalid
+            with self.assertRaises(ValueError):validate(json.dumps(data))
+        data=self.backup()
+        data["snapshot"]["sections"]["messages"][0]["subject"]="Unexpected"
+        with self.assertRaises(ValueError):validate(json.dumps(data))
     def test_demo_is_not_exported(self):
         self.svc.demo()
         with self.assertRaises(ValueError):self.svc.portable_json()

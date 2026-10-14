@@ -65,6 +65,8 @@ def normalize_items(kind: str, items: list[dict[str, Any]]) -> list[dict[str, An
             raise ValueError("Wpis nie zawiera identyfikatora lub tytułu.")
         item = {key: str(original.get(key) or "") for key in
                 ("id", "title", "subtitle", "when", "details", "url")}
+        if kind == "grades":
+            item["subject"] = str(original.get("subject") or "").strip()
         item.update(kind=kind, unread=bool(original.get("unread", False)), changed=False)
         if item["id"] in result and fingerprint(result[item["id"]]) != fingerprint(item):
             raise ValueError("Odczyt zawiera sprzeczne wpisy o tym samym identyfikatorze.")
@@ -172,19 +174,19 @@ def demo_sections(today: date | None = None, *, include_homework: bool = False) 
     today = today or date.today()
     d = lambda offset: (today + timedelta(days=offset)).isoformat()
 
-    def item(kind, ident, title, subtitle, when, details="", unread=False):
+    def item(kind, ident, title, subtitle, when, details="", unread=False, *, subject=""):
         return {"id": f"demo:{kind}:{ident}", "kind": kind, "title": title,
                 "subtitle": subtitle, "when": when, "details": details,
-                "unread": unread, "url": ""}
+                "unread": unread, "url": "", **({"subject": subject} if kind == "grades" else {})}
 
     sections = {
         "grades": [
             item("grades", "g1", "Matematyka · 5", "Sprawdzian: ułamki", d(0),
-                 "Ocena: 5\nPrzedmiot: matematyka\nKategoria: sprawdzian\nWaga: 2\n\nDane demonstracyjne."),
+                 "Ocena: 5\nPrzedmiot: matematyka\nKategoria: sprawdzian\nWaga: 2\n\nDane demonstracyjne.", subject="Matematyka"),
             item("grades", "g2", "Język angielski · 4+", "Odpowiedź ustna", d(-1),
-                 "Ocena: 4+\nKategoria: odpowiedź ustna\n\nDane demonstracyjne."),
-            item("grades", "g3", "Historia · 5", "Praca na lekcji", d(-3)),
-            item("grades", "g4", "Język polski · 4", "Wypracowanie", d(-5)),
+                 "Ocena: 4+\nKategoria: odpowiedź ustna\n\nDane demonstracyjne.", subject="Język angielski"),
+            item("grades", "g3", "Historia · 5", "Praca na lekcji", d(-3), subject="Historia"),
+            item("grades", "g4", "Język polski · 4", "Wypracowanie", d(-5), subject="Język polski"),
         ],
         "messages": [
             item("messages", "m1", "Zebranie rodziców w przyszłym tygodniu", "Wychowawca — przykład", d(0) + " 09:20",

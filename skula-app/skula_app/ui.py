@@ -249,7 +249,7 @@ class SectionView:
         if self.section == "messages" and self.unread_var.get():
             items = [item for item in items if item.get("unread")]
         if query:
-            items = [item for item in items if query in " ".join(str(item.get(key, "")) for key in ("title", "subtitle", "when", "details", "kind")).casefold()]
+            items = [item for item in items if query in " ".join(str(item.get(key, "")) for key in ("title", "subtitle", "when", "details", "kind", "subject")).casefold()]
         return items
 
     def render(self) -> None:
@@ -267,27 +267,7 @@ class SectionView:
         old_yview = self.tree.yview()
         self.tree.delete(*self.tree.get_children())
         self.items_by_row.clear()
-        selected_row = None
-        for index, item in enumerate(items):
-            row = f"item_{index}"
-            self.items_by_row[row] = item
-            unread = bool(item.get("unread"))
-            changed = bool(item.get("changed"))
-            tags = []
-            if index % 2 and not changed:
-                tags.append("stripe")
-            if changed:
-                tags.append("changed")
-            if unread:
-                tags.append("unread")
-            self.tree.insert(
-                "", "end", iid=row,
-                text="●" if unread else "+" if changed else "",
-                values=(str(item.get("title") or "Bez tytułu"), str(item.get("subtitle") or "—"), _when(item.get("when"))),
-                tags=tuple(tags),
-            )
-            if current_id and str(item.get("id", "")) == current_id:
-                selected_row = row
+        selected_row = self._insert_rows(items, current_id)
         if selected_row:
             self.tree.selection_set(selected_row)
             self.tree.focus(selected_row)
@@ -316,6 +296,30 @@ class SectionView:
             self.empty_label.place(relx=0.5, rely=0.44, anchor="center", relwidth=0.92)
         else:
             self.empty_label.place_forget()
+
+    def _insert_rows(self, items: list[dict], current_id: str | None, *, parent: str = "") -> str | None:
+        selected_row = None
+        for index, item in enumerate(items):
+            row = f"item_{len(self.items_by_row)}"
+            self.items_by_row[row] = item
+            unread = bool(item.get("unread"))
+            changed = bool(item.get("changed"))
+            tags = []
+            if index % 2 and not changed:
+                tags.append("stripe")
+            if changed:
+                tags.append("changed")
+            if unread:
+                tags.append("unread")
+            self.tree.insert(
+                parent, "end", iid=row,
+                text="●" if unread else "+" if changed else "",
+                values=(str(item.get("title") or "Bez tytułu"), str(item.get("subtitle") or "—"), _when(item.get("when"))),
+                tags=tuple(tags),
+            )
+            if current_id and str(item.get("id", "")) == current_id:
+                selected_row = row
+        return selected_row
 
     def _select(self, _event: Any = None) -> None:
         selection = self.tree.selection()
@@ -645,6 +649,10 @@ class SkulaApp:
                     from .reminder_view import RemindersView
 
                     self.views[name] = RemindersView(self)
+                elif name == "grades":
+                    from .grades_view import GradesView
+
+                    self.views[name] = GradesView(self)
                 elif name == "schedule":
                     from .calendar_view import ScheduleView
 

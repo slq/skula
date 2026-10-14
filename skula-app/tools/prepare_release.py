@@ -43,7 +43,9 @@ for relative in sorted(set(listing)):
 
 required = {"Start.cmd", "Demo.cmd", "README.md", "LICENSE", "requirements.txt",
             "skula_app/__init__.py", "skula_app/theme.py", "skula_app/home_view.py",
-            "skula_app/assets/brand.png", "docs/screenshots/start.png"}
+            "skula_app/assets/brand.png", "docs/screenshots/start.png",
+            "skula_app/grades_view.py", "docs/screenshots/grades.png",
+            "docs/screenshots/grades-subjects.png"}
 if not required.issubset({inner for _, inner in files}):
     raise SystemExit("Incomplete application package")
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:

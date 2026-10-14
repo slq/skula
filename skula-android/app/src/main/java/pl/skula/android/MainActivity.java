@@ -45,7 +45,9 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     private final Map<String, Button> tabs = new LinkedHashMap<>();
     private final Map<String, String> queries = new HashMap<>();
     private String page = "overview";
-    private int sort = 0;
+    private int sort = 0, gradeSort = 0;
+    private boolean gradesBySubject;
+    private final Set<String> collapsedGradeSubjects = new HashSet<>();
     private boolean calendar = true, homeworkUpcoming = true, loginPrompted, updatingSearch;
     private YearMonth month = YearMonth.now();
     private LocalDate selectedDay;
@@ -81,6 +83,10 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         super.onCreate(saved);
         if (saved != null) {
             page = saved.getString("page", "overview");
+            gradesBySubject = saved.getBoolean("gradesBySubject", false);
+            gradeSort = Math.max(0, Math.min(3, saved.getInt("gradeSort", 0)));
+            ArrayList<String> collapsed = saved.getStringArrayList("collapsedGradeSubjects");
+            if (collapsed != null) collapsedGradeSubjects.addAll(collapsed);
             globalSource=saved.getString("globalSource","all");
             if(!SearchData.sources().contains(globalSource))globalSource="all";
             searchLimit=Math.max(50,Math.min(5000,saved.getInt("searchLimit",50)));
@@ -201,6 +207,9 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     }
     @Override protected void onSaveInstanceState(Bundle out) {
         out.putString("page", page);
+        out.putBoolean("gradesBySubject", gradesBySubject);
+        out.putInt("gradeSort", gradeSort);
+        out.putStringArrayList("collapsedGradeSubjects", new ArrayList<>(collapsedGradeSubjects));
         out.putString("globalSource",globalSource);out.putInt("searchLimit",searchLimit);
         out.putBoolean("overviewTomorrow", overviewTomorrow);
         out.putString("changesSource",changesSource);
@@ -326,13 +335,13 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         search.setContentDescription("Wyszukiwanie w bieżącej sekcji");search.setSaveEnabled(false);weighted(searchRow,search);
         searchRow.addView(DesignUi.iconButton(this,R.drawable.ui_clear,"Wyczyść",()->search.setText("")));
         searchRow.addView(DesignUi.iconButton(this,R.drawable.ui_sort,"Sortowanie",()->new AlertDialog.Builder(this).setTitle("Sortowanie")
-                .setSingleChoiceItems(new String[]{"Domyślna kolejność","Najnowsze","Najstarsze","Tytuł A–Z"},sort,(d,index)->{sort=index;d.dismiss();renderList();})
+                .setSingleChoiceItems(new String[]{"Domyślna kolejność","Najnowsze","Najstarsze","Tytuł A–Z"},page.equals("grades")?gradeSort:sort,(d,index)->{if(page.equals("grades"))gradeSort=index;else sort=index;d.dismiss();renderList();})
                 .setNegativeButton("Anuluj",null).show()));
         spaced(filters,searchRow);
         search.addTextChangedListener(new TextWatcher(){
             public void beforeTextChanged(CharSequence s,int st,int count,int after){}
             public void onTextChanged(CharSequence s,int st,int before,int count){
-                if(!updatingSearch){queries.put(page,s.toString());if(page.equals("search"))searchLimit=50;renderList();scroll.scrollTo(0,0);}
+                if(!updatingSearch){queries.put(page,s.toString());if(page.equals("search"))searchLimit=50;if(page.equals("grades"))collapsedGradeSubjects.clear();renderList();scroll.scrollTo(0,0);}
             }
             public void afterTextChanged(Editable e){}
         });
@@ -429,6 +438,12 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         list.addView(text(fetched.trim().isEmpty() ? "Sekcja jeszcze niepobrana" : "Ostatni odczyt: " + DisplayData.date(fetched), 12, MUTED, false));
         notice(object(state, "errors").optString(page));
         if(page.equals("announcements"))spaced(list,text("Pobrane ogłoszenia pozostają w lokalnym archiwum.",12,MUTED,false));
+        if(page.equals("grades")) {
+            LinearLayout modes=row();
+            weighted(modes,segment("Według daty",()->setGradesMode(false),!gradesBySubject));
+            weighted(modes,segment("Według przedmiotów",()->setGradesMode(true),gradesBySubject));
+            spaced(list,modes);
+        }
         if(page.equals("messages")) {
             LinearLayout modes=row();long unread=items("messages").stream().filter(item->item.optBoolean("unread")).count();
             weighted(modes,segment("Wszystkie",()->{unreadMessagesOnly=false;renderList();},!unreadMessagesOnly));
@@ -438,7 +453,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         List<JSONObject> all = items(page);
         List<JSONObject> filtered = new ArrayList<>();
         for (JSONObject item : all) {
-            String haystack = (item.optString("title") + " " + item.optString("subtitle") + " " + item.optString("when") + " " + item.optString("details")).toLowerCase(Locale.ROOT);
+            String haystack = (item.optString("title") + " " + item.optString("subtitle") + " " + item.optString("when") + " " + item.optString("details") + " " + (page.equals("grades")?GradeData.subject(item):"")).toLowerCase(Locale.ROOT);
             if (haystack.contains(query)&&(!page.equals("messages")||!unreadMessagesOnly||item.optBoolean("unread"))) filtered.add(item);
         }
         if (page.equals("homework")) {
@@ -477,16 +492,45 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         }
         Comparator<JSONObject> byDate = Comparator.comparing(item -> item.optString("when"));
         boolean ascending = page.equals("schedule") || page.equals("timetable") || page.equals("homework");
-        filtered.sort(sort == 3 ? Comparator.comparing(item -> item.optString("title").toLowerCase(Locale.ROOT)) :
+        if(page.equals("grades")) filtered = GradeData.sorted(filtered,gradeSort);
+        else filtered.sort(sort == 3 ? Comparator.comparing(item -> item.optString("title").toLowerCase(Locale.ROOT)) :
                 sort == 1 ? byDate.reversed() : sort == 2 ? byDate : ascending ? byDate : byDate.reversed());
-        list.addView(text("Pozycji: " + filtered.size(), 12, MUTED, false));
+        List<GradeData.Group> gradeGroups = page.equals("grades") && gradesBySubject ? GradeData.groups(filtered) : Collections.emptyList();
+        list.addView(text((page.equals("grades")?"Ocen: ":"Pozycji: ") + filtered.size()
+                + (page.equals("grades") && gradesBySubject ? " · Przedmiotów: " + gradeGroups.size() : ""), 12, MUTED, false));
         if (filtered.isEmpty()) {
             String empty = !query.isEmpty() ? "Brak wyników. Zmień lub wyczyść wyszukiwanie." :
                     fetched.trim().isEmpty() ? "Połącz konto lub włącz demo. Jeśli odczyt się nie udał, sprawdź błąd powyżej." :
                     "Brak pozycji w pobranych danych dla tego widoku.";
             card().addView(text(empty, 15, MUTED, false));
         }
-        for (JSONObject item : filtered) entry(item, page);
+        if(page.equals("grades") && gradesBySubject) {
+            for(GradeData.Group group : gradeGroups) gradeGroup(group);
+        } else for (JSONObject item : filtered) entry(item, page);
+    }
+
+    private void setGradesMode(boolean grouped) {
+        gradesBySubject = grouped;
+        gradeSort = 0;
+        renderList();
+        scroll.scrollTo(0,0);
+    }
+
+    private void gradeGroup(GradeData.Group group) {
+        boolean expanded = !collapsedGradeSubjects.contains(group.key);
+        LinearLayout box = card();
+        box.setTag("grade_group:" + group.key);
+        Button header = segment((expanded?"⌄  ":"›  ") + group.name + " · " + group.items.size(), () -> {
+            if(!collapsedGradeSubjects.add(group.key)) collapsedGradeSubjects.remove(group.key);
+            int y = scroll.getScrollY();
+            renderList();
+            scroll.post(() -> scroll.scrollTo(0,y));
+        }, true);
+        header.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        header.setTag("grade_header:" + group.key);
+        header.setContentDescription((expanded?"Zwiń":"Rozwiń") + " przedmiot: " + group.name + ". Liczba ocen: " + group.items.size());
+        box.addView(header,new LinearLayout.LayoutParams(-1,-2));
+        if(expanded) for(JSONObject item : group.items) entry(item,"grades",box);
     }
 
     private void unifiedCalendar() {
@@ -540,8 +584,10 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
     private void calendarMonth(YearMonth value){if(page.equals("calendar"))unifiedMonth=value;else month=value;}
     private void calendarDay(LocalDate value){if(page.equals("calendar"))unifiedDay=value;else selectedDay=value;}
 
-    private void entry(JSONObject item,String kind) {
-        LinearLayout outer=row();outer.setGravity(Gravity.TOP);outer.setPadding(0,dp(14),0,dp(14));
+    private void entry(JSONObject item,String kind) { entry(item,kind,list); }
+    private void entry(JSONObject item,String kind,LinearLayout target) {
+        LinearLayout outer=row();
+        if(kind.equals("grades"))outer.setTag("grade_item:" + item.optString("id"));outer.setGravity(Gravity.TOP);outer.setPadding(0,dp(14),0,dp(14));
         addBadge(outer,item,kind,40);
         LinearLayout copy=column();weighted(outer,copy);
         if(page.equals("calendar"))copy.addView(text(CalendarData.label(kind),11,CalendarData.color(kind),true));
@@ -564,7 +610,7 @@ public final class MainActivity extends Activity implements MobileRepository.Lis
         }
         Runnable open=()->{if(page.equals("search"))hideKeyboard();if(kind.equals("reminders"))reminderUi.open(item.optString("reminder_id"));else details(item,kind);};
         DesignUi.clickable(outer,Color.TRANSPARENT,12,open);copy.setOnClickListener(v->open.run());
-        outer.setContentDescription(item.optString("title")+". Otwórz szczegóły");list.addView(outer);divider(list);
+        outer.setContentDescription(item.optString("title")+". Otwórz szczegóły");target.addView(outer);divider(target);
     }
 
     private void buildBottomNavigation() {

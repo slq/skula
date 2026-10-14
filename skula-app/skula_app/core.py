@@ -414,7 +414,7 @@ class Controller:
                 self._demo_counter += 1
                 self._demo_data["grades"].append({
                     "id": f"demo:grades:new-{self._demo_counter}", "kind": "grades",
-                    "title": "Biologia · 5", "subtitle": "Nowa ocena — przykład",
+                    "title": "Biologia · 5", "subtitle": "Nowa ocena — przykład", "subject": "Biologia",
                     "when": stamp(), "details": "To sztuczny wpis do sprawdzenia wykrywania zmian i powiadomień.",
                     "url": "", "unread": False,
                 })

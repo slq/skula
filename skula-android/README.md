@@ -29,6 +29,7 @@ Działająca aplikacja na Androidzie 12, z fikcyjnymi danymi w trybie demo. Zrzu
 | --- | --- |
 | **Start** | Wszystkie nowości od poprzedniego wejścia, cały plan na dzisiaj lub jutro, zadania, wydarzenia i przypomnienia. |
 | **Dziennik** | Oceny, wiadomości, ogłoszenia, frekwencja, terminarz i plan lekcji. Szczegóły wpisów oraz przejście do oficjalnego dziennika. |
+| **Oceny** | Lista według daty lub rozwijane grupy przedmiotów z licznikami. Najnowsze oceny na górze, wyszukiwanie oraz podgląd szczegółów offline. |
 | **Wyszukiwanie** | Jedna wyszukiwarka siedmiu sekcji i własnych przypomnień, filtry źródeł i sortowanie. |
 | **Zadania** | Terminy, filtry i lokalne oznaczanie wykonania. Treść pobierana na żądanie. |
 | **Kalendarz** | Lekcje, wydarzenia, zadania i przypomnienia w widoku miesiąca lub listy. Opcjonalny eksport do kalendarza Google na telefonie. |
@@ -61,7 +62,7 @@ powershell -ExecutionPolicy Bypass -File .\Install-USB.ps1
 Skrypt instaluje APK z katalogu `artifacts` i otwiera aplikację. Możesz wskazać inny pakiet lub SDK:
 
 ~~~powershell
-.\Install-USB.ps1 -SdkPath 'C:/Android/Sdk' -ApkPath 'C:/Downloads/Skula-android-0.14.0.apk'
+.\Install-USB.ps1 -SdkPath 'C:/Android/Sdk' -ApkPath 'C:/Downloads/Skula-android-0.15.0.apk'
 ~~~
 
 **Aktualizacja zachowuje dane, gdy pakiet i podpis pozostają zgodne.** Przejście z aplikacji sprzed zmiany nazwy wymaga eksportu i importu JSON. Przed taką migracją przeczytaj [MIGRATION.md](MIGRATION.md) oraz [BACKUPS.md](BACKUPS.md).
@@ -74,6 +75,19 @@ Skrypt instaluje APK z katalogu `artifacts` i otwiera aplikację. Możesz wskaza
 4. Korzystaj z dolnego menu. Oceny, Zadania domowe, Terminarz, Frekwencję, Plan lekcji, Przypomnienia i Ustawienia znajdziesz pod **Więcej**.
 
 Pełną treść wiadomości pobierasz osobnym przyciskiem — może to oznaczyć ją jako przeczytaną w dzienniku. **Zrobione** przy zadaniu oznacza Twój lokalny status, a nie oddanie pracy nauczycielowi.
+
+### Oceny według daty lub przedmiotów
+
+W **Więcej → Oceny** wybierz **Według daty** albo **Według przedmiotów**. Domyślnie najnowsze oceny są na górze; w drugim widoku są uporządkowane w grupy z liczbą ocen. Dotknięcie nagłówka zwija lub rozwija przedmiot, a dotknięcie oceny otwiera jej szczegóły. Grupy są początkowo rozwinięte.
+
+Wyszukiwanie filtruje oceny w obu widokach, ukrywa puste grupy i rozwija dopasowania. Widok, zwinięte grupy i wpisane hasło pozostają zachowane po powrocie z innej sekcji oraz po obrocie ekranu. Ikona sortowania pozwala też wybrać najstarsze wpisy lub tytuły A–Z; wybór trybu przywraca najnowsze oceny na górze. Grupowanie obejmuje oceny opisowe i starsze lokalne kopie danych.
+
+Widoki ocen w wersji 0.15.0; zrzuty korzystają wyłącznie z danych syntetycznych.
+
+<p align="center">
+  <a href="docs/screenshots/grades-date.png"><img src="docs/screenshots/grades-date.png" width="240" alt="Oceny w Androidzie według daty, od najnowszych"></a>
+  <a href="docs/screenshots/grades-subjects.png"><img src="docs/screenshots/grades-subjects.png" width="240" alt="Oceny w Androidzie pogrupowane według przedmiotów z licznikami"></a>
+</p>
 
 ## Dane i prywatność
 
@@ -122,7 +136,7 @@ Dla pakietu release użyj lokalnego SDK w `.tools/android-sdk` i podaj Pythona 3
 powershell -ExecutionPolicy Bypass -File .\Build.ps1 -PythonPath 'C:/Python313/python.exe' -Release
 ~~~
 
-SDK w tej lokalizacji jest wymagane także przez skrypt przygotowujący metadane wydania. Python może być automatycznie wykryty w `.tools/python-host`. Wynikiem dla obecnej konfiguracji jest `artifacts/Skula-android-0.14.0.apk`, jego suma kontrolna, metadane aktualizacji i archiwum źródeł. Samo budowanie nie publikuje wydania.
+SDK w tej lokalizacji jest wymagane także przez skrypt przygotowujący metadane wydania. Python może być automatycznie wykryty w `.tools/python-host`. Wynikiem dla obecnej konfiguracji jest `artifacts/Skula-android-0.15.0.apk`, jego suma kontrolna, metadane aktualizacji i archiwum źródeł. Samo budowanie nie publikuje wydania.
 
 Release używa istniejącego lokalnego klucza podpisu. Nowy klucz na innym komputerze nie pozwoli zaktualizować poprzedniej instalacji. Zasady podpisywania i publikacji: [UPDATES.md](UPDATES.md). SDK, środowisko Pythona i narzędzia kompilacji nie są potrzebne na telefonie.
 

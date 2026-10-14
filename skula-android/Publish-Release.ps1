@@ -1,4 +1,4 @@
-param([string]$Version = '0.14.0', [switch]$Draft)
+param([string]$Version = '0.15.0', [switch]$Draft)
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Nieprawidlowa wersja.' }
 if (-not $env:GITHUB_TOKEN) { throw 'Ustaw GITHUB_TOKEN z prawem zapisu Contents do slq/skula. Nie wklejaj tokenu do kodu ani czatu.' }

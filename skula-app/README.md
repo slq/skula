@@ -2,7 +2,7 @@
 
 Lokalny, nieoficjalny klient konta **dziennika Synergia** dla Windows. Wyświetla dane dziennika, okresowo sprawdza zmiany i umożliwia planowanie własnych przypomnień.
 
-**Wersja: 0.2.0. Status: wersja rozwojowa.** Integracja korzysta z nieoficjalnych bibliotek i własnego adaptera logowania; zmiany po stronie dziennika lub konfiguracja szkoły mogą wymagać dostosowania kodu. Projekt nie jest powiązany z producentem dziennika.
+**Wersja: 0.3.0. Status: wersja rozwojowa.** Integracja korzysta z nieoficjalnych bibliotek i własnego adaptera logowania; zmiany po stronie dziennika lub konfiguracja szkoły mogą wymagać dostosowania kodu. Projekt nie jest powiązany z producentem dziennika.
 
 [Opis repozytorium](https://github.com/slq/skula) · [Historie użytkownika i kryteria akceptacji](USER_STORIES.md) · [Licencja](LICENSE) · [Źródła i zależności](THIRD_PARTY_NOTICES.md)
 
@@ -27,7 +27,7 @@ Start pokazuje cały pobrany plan na **Dzisiaj / Jutro**. Nowości obejmują wsz
 - Standardowy Python **3.11 lub nowszy**, wraz z `pip` i `tkinter`. Testy sprawdzane są na Pythonie 3.12. Nie używaj dystrybucji „embeddable”.
 - Internet do instalacji bibliotek i synchronizacji konta.
 
-Pobierz [Skula Windows 0.2.0](https://github.com/slq/skula/releases/tag/windows-v0.2.0), rozpakuj plik `Skula-windows-0.2.0.zip` i otwórz utworzony folder. Możesz też sklonować repozytorium i otworzyć `skula-app`. Nie uruchamiaj skryptów bezpośrednio z archiwum.
+Pobierz [Skula Windows 0.3.0](https://github.com/slq/skula/releases/tag/windows-v0.3.0), rozpakuj plik `Skula-windows-0.3.0.zip` i otwórz utworzony folder. Możesz też sklonować repozytorium i otworzyć `skula-app`. Nie uruchamiaj skryptów bezpośrednio z archiwum.
 
 | Skrypt | Działanie |
 |---|---|
@@ -41,7 +41,7 @@ Demo nie zastępuje zapisu prawdziwego konta. Możesz w nim obejrzeć sekcje, us
 
 ## Aktualizacja aplikacji
 
-Zamknij poprzednią wersję, rozpakuj nowe wydanie do osobnego folderu i uruchom jego `Start.cmd`. Pierwsze uruchomienie przygotuje własne środowisko `.venv`; nie kopiuj go ze starej paczki. Szyfrowane dane konta i przypomnienia pozostają w dotychczasowym folderze danych Windows. [Opis zmian 0.2.0](RELEASE_NOTES.md).
+Zamknij poprzednią wersję, rozpakuj nowe wydanie do osobnego folderu i uruchom jego `Start.cmd`. Pierwsze uruchomienie przygotuje własne środowisko `.venv`; nie kopiuj go ze starej paczki. Szyfrowane dane konta i przypomnienia pozostają w dotychczasowym folderze danych Windows. [Opis zmian 0.3.0](RELEASE_NOTES.md).
 
 ## Połączenie konta
 
@@ -57,7 +57,7 @@ Pierwszy poprawny odczyt sekcji ustala punkt odniesienia bez powiadomień o star
 | Sekcja | Zakres |
 |---|---|
 | Start | Pełny plan dzisiaj/jutro, nowości z ostatniego odczytu, ostatnie oceny, nadchodzące wydarzenia i nieprzeczytane wiadomości |
-| Oceny | Oceny numeryczne i opisowe, daty, kategorie i komentarze |
+| Oceny | Oceny numeryczne i opisowe, widok według daty lub przedmiotów, kategorie i komentarze |
 | Wiadomości | Do 200 najnowszych nagłówków, nadawca, data i status przeczytania; osobne pobieranie treści |
 | Ogłoszenia | Tytuł, autor, data i treść; wyszukiwanie i wykrywanie zmian |
 | Kalendarz | Bieżący i kolejny miesiąc, kalendarz z listą lub sama lista |
@@ -67,6 +67,17 @@ Pierwszy poprawny odczyt sekcji ustala punkt odniesienia bez powiadomień o star
 | Ustawienia | Konto, częstotliwość odświeżania i powiadomienia |
 
 Listy obsługują wyszukiwanie i sortowanie. Przy błędzie sekcji pozostaje ostatnia poprawna kopia wraz z czasem odczytu.
+
+### Oceny
+
+Przełącznik **Według daty / Według przedmiotów** zmienia układ pobranej listy. Domyślnie najnowsze oceny są na górze. W widoku przedmiotów oceny trafiają do rozwiniętych grup z licznikami, z najnowszymi wpisami na początku każdej grupy. Strzałka przy przedmiocie zwija lub rozwija grupę; działa też klawisz Enter po zaznaczeniu jej nagłówka.
+
+Wyszukiwanie filtruje oceny w obu widokach i ukrywa puste grupy. Kliknięcie oceny otwiera jej szczegóły. Wybrany widok i zwinięte grupy pozostają zachowane podczas odświeżania oraz przechodzenia między sekcjami w bieżącym uruchomieniu. Grupowanie działa również na starszej lokalnej kopii bez ponownego logowania.
+
+<p align="center">
+  <a href="docs/screenshots/grades.png"><img src="docs/screenshots/grades.png" width="450" alt="Oceny według daty, najnowsze na górze"></a>
+  <a href="docs/screenshots/grades-subjects.png"><img src="docs/screenshots/grades-subjects.png" width="450" alt="Oceny pogrupowane według przedmiotów z licznikami"></a>
+</p>
 
 ### Wiadomości
 
@@ -135,7 +146,7 @@ Nie publikuj haseł, cookies, plików `state.dpapi` ani zrzutów z danymi uczni�
 
 1. Zamknij poprzednią aplikację przed uruchomieniem Skula.
 2. Pobierz nowe pliki repozytorium i uruchom `skula-app/Start.cmd`.
-3. Okno powinno mieć tytuł **Skula 0.2.0**. Konto, kopia i przypomnienia ze starego folderu danych pozostają dostępne.
+3. Okno powinno mieć tytuł **Skula 0.3.0**. Konto, kopia i przypomnienia ze starego folderu danych pozostają dostępne.
 
 Pakiet Pythona zmienił nazwę na `skula_app`. Przy ręcznym uruchamianiu używaj `python -m skula_app`. Windows rejestruje powiadomienia pod nową nazwą **Skula**, dlatego sprawdź ich ustawienia i wykonaj test po aktualizacji.
 
@@ -174,6 +185,7 @@ py -3 -m venv .venv
 | `skula_app/theme.py`, `assets/` | Kolory, style, karty i lokalne ikony wspólnego motywu |
 | `skula_app/home_view.py` | Start: lokalny plan dnia, nowości i skróty do wpisów |
 | `skula_app/calendar_view.py` | Kalendarz i przełączanie widoków terminarza |
+| `skula_app/grades_view.py` | Widoki ocen według daty i przedmiotów, również dla zapisanych kopii |
 | `skula_app/reminders.py`, `reminder_view.py` | Terminy alertów, formularz i lista przypomnień |
 | `skula_app/core.py` | Worker, harmonogram, konto i wykrywanie zmian |
 | `skula_app/connector.py` | Logowanie, adaptery dziennika i normalizacja danych |
@@ -184,6 +196,8 @@ py -3 -m venv .venv
 Testy obejmują logowanie na syntetycznym transporcie HTTP, obsługę przekierowań, ochronę danych w diagnostyce, wykrywanie zmian, awarie zapisu, DPAPI, przypomnienia i układ interfejsu. Testy powiadomień sprawdzają rzeczywisty kod PowerShell bez wysyłania banerów. Testy korzystają z osobnego katalogu danych i nie odczytują zapisanego konta użytkownika. Nie zastępują weryfikacji konkretnego konta dziennika.
 
 Weryfikacja motywu z 14 października 2026: **180 testów zaliczonych, 2 pominięte i 16 subtestów zaliczonych**, Windows 11, Python 3.12.10. Sprawdzono pełne listy 12 lekcji i 8 nowości, długie tytuły, przełączanie dni, filtry wiadomości, podgląd konkretnego wpisu bez odczytu sieciowego oraz okna 1080×720 i 1280×880. Pominięte testy dotyczą działania poza Windows. Dane konta, DPAPI, adapter i harmonogram pozostały bez zmian.
+
+Weryfikacja grupowania ocen: **194 testy zaliczone, 2 pominięte i 16 subtestów zaliczonych**. Obejmuje oba widoki, kolejność ocen, wyszukiwanie, zachowanie wyboru i zwiniętych grup oraz zgodność ze starszymi zapisami bez dodatkowych powiadomień.
 
 Zrzuty demo można odtworzyć przez `.venv/Scripts/python.exe tools/capture_theme.py`. Narzędzie pokazuje na chwilę własne okno demo i zapisuje wyłącznie jego obraz do `docs/screenshots/`; nie odczytuje zapisanego konta. Ikony są dołączone do aplikacji. Ich opcjonalne odtworzenie przez `tools/generate_theme_icons.py` wymaga Pillow wyłącznie w środowisku deweloperskim.
 

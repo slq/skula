@@ -374,3 +374,28 @@ Na pustym emulatorze SkulaBackgroundTest / API 31 zainstalowano oficjalne APK 0.
 UpdateInstallIntegrationTest potwierdził pobranie i weryfikację APK oraz otwarcie potwierdzenia systemowego instalatora. Po aktualizacji przez `adb install -r` faza verify potwierdziła wersję 22 i zachowanie zaszyfrowanego archiwum, przypomnienia oraz statusu zadania. Tymczasowe uprawnienie instalacji przywrócono do wartości domyślnej, a syntetyczne dane usunięto. Nie testowano ręcznego zatwierdzenia instalatora na fizycznym telefonie.
 
 Na końcowym wydaniu powtórzono 9 scenariuszy DesignUiTest, HomeScreenTest i CopyAndScreenshotUiTest — wszystkie OK. Testy aktualizatora odczytują wersję z lokalnego APK testowego zamiast wymagać stałego numeru wydania. Publiczne archiwum źródeł zawiera także obrazy używane przez README.
+
+## Grupowanie ocen — 14 października 2026
+
+Bieżący kod, bez publikacji nowego wydania: kompilacja debug i testowego APK, **31 testów Java**, **51 testów mobilnej warstwy Python** oraz Android Lint (0 błędów, 21 dotychczasowych ostrzeżeń).
+
+Na osobnym emulatorze SkulaBackgroundTest / Android 12 API 31 przeszło **20 różnych scenariuszy natywnych**: GradesUiTest (4), BackupDataTest (6), BackupUiTest (1), DesignUiTest (2), HomeScreenTest (4), GlobalSearchUiTest (3). Cztery scenariusze GradesUiTest powtórzono przy czcionce 130%, po czym przywrócono 100%.
+
+- Oba widoki zachowują wszystkie oceny; w każdej grupie domyślnie najnowsze są pierwsze. Daty uwzględniają strefę czasową, brak daty trafia na koniec.
+- Sprawdzono oceny opisowe, starsze zapisy bez osobnego pola przedmiotu, różną wielkość liter, liczniki i otwieranie konkretnego wpisu.
+- Wyszukiwanie usuwa puste grupy; błąd odczytu nie usuwa kopii. Widok, zwinięcie grup i zapytanie przetrwały nawigację oraz odtworzenie Activity.
+- Eksport/import zachowuje metadane przedmiotu, przyjmuje starsze kopie i odrzuca nieprawidłowy typ nowego pola.
+
+BackupUiTest wymaga osobnego procesu Instrumentation: uruchomiony po testach demo nie uzyskał gotowości eksportu, ponieważ singleton repozytorium nadal miał stan demo. Oddzielny przebieg zakończył się OK. Testy wykonały wyłącznie operacje na syntetycznych danych; nie używano konta szkolnego ani fizycznego telefonu.
+
+Zrzuty dwóch widoków zapisano przez UiAutomation podczas GradesUiTest w katalogu docs/screenshots. Aby je odtworzyć na pustym emulatorze, uruchom GradesUiTest z argumentem instrumentacji -e grades_screenshots true, a następnie pobierz grades-date.png i grades-subjects.png z katalogu aplikacji /sdcard/Android/data/pl.skula.android/files/.
+
+## Wydanie 0.15.0 — 14 października 2026
+
+Końcowe APK: pl.skula.android, versionCode 23, versionName 0.15.0, bez debuggable. Build release, 31 testów Java oraz Lint zakończone poprawnie (0 błędów, 21 dotychczasowych ostrzeżeń). Podpis SHA-256 certyfikatu 0b022decbecb6f36fa5279f98d4451165f3ade0b3dca2d50019e5039a10217fe jest zgodny z opublikowanym APK 0.14.0.
+
+Na odizolowanym emulatorze SkulaBackgroundTest / API 31 zainstalowano oficjalne APK 0.14.0 po sprawdzeniu jego sumy SHA-256. Pięć testów UpdateValidationTest i UpdateUiTest przeszło dla docelowego APK 0.15.0. UpdateInstallIntegrationTest potwierdził pobranie i weryfikację pakietu oraz otwarcie potwierdzenia systemowego instalatora. Po aktualizacji przez adb install -r faza verify potwierdziła wersję 23 i zachowanie zaszyfrowanego archiwum, przypomnienia oraz statusu zadania. Tymczasowe uprawnienie instalacji przywrócono do wcześniejszej wartości deny; test usunął swoje syntetyczne dane.
+
+Na końcowym APK przeszło sześć scenariuszy GradesUiTest i DesignUiTest. Pierwszy przebieg wykrył brak synchronizacji testu z oknem dostępności podczas animacji szczegółów; test oczekuje teraz do pięciu sekund na konkretną treść oceny. Powtórzony przebieg zakończył się OK. Nie zmieniono z tego powodu kodu aplikacji ani testowanego APK.
+
+Windows 0.3.0: 194 testy zaliczone, 2 pominięte, 16 subtestów zaliczonych. Sprawdzono integralność ZIP, zawartość paczki i uruchomienie obu widoków ocen z rozpakowanego wydania na danych demo. Nie używano rzeczywistego konta szkolnego ani fizycznego telefonu.

@@ -2,6 +2,12 @@
 
 Historia funkcji przeniesiona z README. Opis bieżącego pakietu znajduje się w [RELEASE_NOTES.md](RELEASE_NOTES.md), a zasady aktualizacji w [UPDATES.md](UPDATES.md).
 
+## 0.15.0 — 2026-10-14
+
+- Oceny: przełącznik **Według daty / Według przedmiotów**, rozwijane grupy z licznikami i najnowszymi ocenami na początku.
+- Wyszukiwanie i szczegóły działają w obu widokach; wybór i zwinięte grupy są odtwarzane po obrocie ekranu.
+- Obsługa przedmiotów w pobieranych ocenach, zapisanej kopii i eksporcie JSON. Import starszych kopii nadal działa.
+
 ## 0.14.0 — 2026-10-13
 
 - Nowy natywny interfejs zgodny z zaakceptowanym prototypem: jasne tło, turkusowe akcenty, ikony i uporządkowane listy.

@@ -9,7 +9,7 @@ from mobile_announcements import AnnouncementArchives
 from mobile_changes import ChangeJournal, KINDS
 
 FIELDS = {"version", "profile", "snapshot", "announcement_archives", "change_journal", "retry_after"}
-ITEM_FIELDS = {"id", "kind", "title", "subtitle", "when", "details", "url", "unread", "changed"}
+ITEM_FIELDS = {"id", "kind", "title", "subtitle", "when", "details", "url", "unread", "changed", "subject"}
 
 def exact(value, fields):
     if not isinstance(value, dict) or set(value) - fields:
@@ -21,7 +21,9 @@ def rows(kind, items):
     ids = set()
     for item in items:
         exact(item, ITEM_FIELDS)
-        for field in ("id", "title", "subtitle", "when", "details", "url"):
+        if "subject" in item and kind != "grades":
+            raise ValueError("Subject metadata is only valid for grades")
+        for field in ("id", "title", "subtitle", "when", "details", "url", "subject"):
             if not isinstance(item.get(field, ""), str) or len(item.get(field, "")) > 1000000:
                 raise ValueError("Invalid backup text")
         if not item.get("id") or len(item["id"]) > 512 or not item.get("title") or item["id"] in ids:
