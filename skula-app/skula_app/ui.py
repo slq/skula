@@ -16,29 +16,18 @@ from tkinter import messagebox, ttk
 from typing import Any
 
 from . import __version__
+from .theme import (
+    BG, WHITE, INK, MUTED, TEAL, TEAL_DARK, TEAL_PALE, LINE, SIDEBAR, SIDEBAR_MUTED,
+    WARNING_BG, WARNING_FG, ERROR_BG, ERROR_FG, Surface, setup_styles, load_icons,
+)
 
-
-BG = "#f4f6fa"
-WHITE = "#ffffff"
-INK = "#183047"
-MUTED = "#64748b"
-TEAL = "#087e8b"
-TEAL_DARK = "#086774"
-TEAL_PALE = "#e6f4f4"
-LINE = "#dce4ec"
-SIDEBAR = "#172d40"
-SIDEBAR_MUTED = "#afbdcb"
-WARNING_BG = "#fff4dc"
-WARNING_FG = "#855d13"
-ERROR_BG = "#fff0ed"
-ERROR_FG = "#994835"
 
 PAGES = {
-    "overview": ("Przegląd", "To, co warto sprawdzić w pierwszej kolejności."),
+    "overview": ("Start", "Twój dzień w szkole, w jednym miejscu."),
     "grades": ("Oceny", "Ostatnio pobrane oceny i komentarze nauczycieli."),
     "messages": ("Wiadomości", "Do 200 najnowszych wiadomości. Treść pobierzesz osobnym przyciskiem."),
     "announcements": ("Ogłoszenia", "Ogłoszenia szkoły z autorem, datą i pełną treścią."),
-    "schedule": ("Terminarz", "Wydarzenia z bieżącego i kolejnego miesiąca."),
+    "schedule": ("Kalendarz", "Wydarzenia z bieżącego i kolejnego miesiąca."),
     "attendance": ("Frekwencja", "Obecności, spóźnienia i nieobecności z dziennika."),
     "timetable": ("Plan lekcji", "Bieżący i kolejny tydzień. Sprawdź czas odczytu poniżej."),
     "reminders": ("Przypomnienia", "Własne alerty dla ogłoszeń, terminarza i wiadomości."),
@@ -135,6 +124,8 @@ class SectionView:
         self.selected_item: dict | None = None
         self.sort_column: str | None = None
         self.sort_reverse = False
+        self.unread_var = tk.BooleanVar(value=False)
+        self.unread_var.trace_add("write", lambda *_: self.render())
 
         toolbar = tk.Frame(self.frame, bg=BG)
         self.toolbar = toolbar
@@ -164,6 +155,11 @@ class SectionView:
         if section == "messages":
             message_actions = tk.Frame(self.frame, bg=BG)
             message_actions.pack(fill="x", pady=(0, 10))
+            self.message_filters = []
+            for unread, title in ((False, "Wszystkie"), (True, "Nieprzeczytane")):
+                button = ttk.Button(message_actions, text=title, command=lambda value=unread: self.unread_var.set(value))
+                button.pack(side="left", padx=(0, 4))
+                self.message_filters.append(button)
             self.read_button = ttk.Button(
                 message_actions,
                 text="Pobierz treść (oznaczy jako przeczytaną)",
@@ -171,7 +167,7 @@ class SectionView:
                 style="Accent.TButton",
                 state="disabled",
             )
-            self.read_button.pack(anchor="w")
+            self.read_button.pack(side="right")
 
         self.panes = ttk.Panedwindow(self.frame, orient=pane_orientation)
         self.panes.pack(fill="both", expand=True)
@@ -201,8 +197,8 @@ class SectionView:
         scrollbar.pack(side="right", fill="y")
         self.tree.pack(side="left", fill="both", expand=True)
         self.tree.tag_configure("unread", font=("Segoe UI", 10, "bold"))
-        self.tree.tag_configure("changed", background="#fff8e3")
-        self.tree.tag_configure("stripe", background="#f8fafc")
+        self.tree.tag_configure("changed", background="#edf6f2")
+        self.tree.tag_configure("stripe", background="#f7faf9")
         self.tree.bind("<<TreeviewSelect>>", self._select)
         self.tree.bind("<Double-1>", self._double_click)
         self.tree.bind("<Return>", self._show_selected_dialog)
@@ -250,12 +246,16 @@ class SectionView:
         items = list(self.app.state.get("sections", {}).get(self.section) or [])
         query = self.search_var.get().casefold().strip()
         items = _ordered_items(items, self.section)
+        if self.section == "messages" and self.unread_var.get():
+            items = [item for item in items if item.get("unread")]
         if query:
             items = [item for item in items if query in " ".join(str(item.get(key, "")) for key in ("title", "subtitle", "when", "details", "kind")).casefold()]
         return items
 
     def render(self) -> None:
         state = self.app.state
+        for index, button in enumerate(getattr(self, "message_filters", [])):
+            button.configure(style="Selected.TButton" if bool(index) == self.unread_var.get() else "Pill.TButton")
         items = self.filtered_items()
         query = self.search_var.get().casefold().strip()
         current_id = str(self.selected_item.get("id", "")) if self.selected_item else None
@@ -308,6 +308,8 @@ class SectionView:
         if not items:
             if query:
                 empty = "Brak wyników. Spróbuj krótszego hasła lub wyczyść wyszukiwanie."
+            elif self.section == "messages" and self.unread_var.get() and state.get("updated_at", {}).get("messages"):
+                empty = "Brak nieprzeczytanych wiadomości w pobranej liście."
             else:
                 empty = self.app.empty_text(self.section)
             self.empty_label.configure(text=empty)
@@ -404,6 +406,8 @@ class SkulaApp:
         self._prefs_dirty = False
         self._applying_preferences = False
         self._setup_styles()
+        self.icons = load_icons(self.root)
+        self.root.iconphoto(True, self.icons["brand"])
         self._build_shell()
         self._build_overview()
         self._build_settings()
@@ -421,76 +425,64 @@ class SkulaApp:
             self.root.after(150, lambda: self.call("restore"))
 
     def _setup_styles(self) -> None:
-        self.root.option_add("*Font", ("Segoe UI", 10))
-        style = ttk.Style(self.root)
-        style.theme_use("clam")
-        style.configure("TButton", font=("Segoe UI", 10), padding=(14, 9), borderwidth=0)
-        style.configure("Accent.TButton", background=TEAL, foreground=WHITE, padding=(16, 10), font=("Segoe UI", 10, "bold"))
-        style.map("Accent.TButton", background=[("disabled", "#b8ced2"), ("active", TEAL_DARK)], foreground=[("disabled", "#f7fafa")])
-        style.configure("Quiet.TButton", background=WHITE, foreground=INK, borderwidth=1, bordercolor=LINE, lightcolor=WHITE, darkcolor=LINE, padding=(12, 8))
-        style.map("Quiet.TButton", background=[("active", "#eaf0f5"), ("disabled", "#f0f2f5")], foreground=[("disabled", "#9aa6b2")])
-        style.configure("Calendar.TButton", background=WHITE, foreground=INK, padding=(8, 4))
-        style.map("Calendar.TButton", background=[("active", TEAL_PALE)], foreground=[("disabled", "#9aa6b2")])
-        style.configure("Danger.TButton", background=WHITE, foreground=ERROR_FG, borderwidth=1, bordercolor="#edcec7", padding=(14, 9))
-        style.map("Danger.TButton", background=[("active", ERROR_BG)])
-        style.configure("Panel.TEntry", fieldbackground=WHITE, bordercolor=LINE, lightcolor=LINE, darkcolor=LINE, padding=8)
-        style.map("Panel.TEntry", bordercolor=[("focus", TEAL)])
-        style.configure("TCombobox", fieldbackground=WHITE, background=WHITE, bordercolor=LINE, padding=7)
-        style.configure("Panel.TCheckbutton", background=WHITE, foreground=INK, padding=(0, 5))
-        style.map("Panel.TCheckbutton", background=[("active", WHITE)])
-        style.configure("Panel.Treeview", background=WHITE, fieldbackground=WHITE, foreground=INK, rowheight=40, font=("Segoe UI", 10), borderwidth=0)
-        style.map("Panel.Treeview", background=[("selected", TEAL_PALE)], foreground=[("selected", INK)])
-        style.configure("Panel.Treeview.Heading", background="#edf2f7", foreground=MUTED, font=("Segoe UI", 9, "bold"), padding=(10, 11), relief="flat")
-        style.map("Panel.Treeview.Heading", background=[("active", "#e0e9f1")])
-        style.configure("TScrollbar", background="#d2dce5", troughcolor="#f4f7fa", borderwidth=0, arrowsize=12)
-        style.configure("TPanedwindow", background=BG)
+        setup_styles(self.root)
 
     def _build_shell(self) -> None:
-        sidebar = tk.Frame(self.root, bg=SIDEBAR, width=215)
+        sidebar = tk.Frame(self.root, bg=SIDEBAR, width=212)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
+        tk.Frame(self.root, bg=LINE, width=1).pack(side="left", fill="y")
         brand = tk.Frame(sidebar, bg=SIDEBAR)
-        brand.pack(fill="x", padx=22, pady=(31, 34))
-        tk.Label(brand, text="SK", bg=TEAL, fg=WHITE, font=("Segoe UI", 13, "bold"), padx=10, pady=6).pack(anchor="w")
-        tk.Label(brand, text="Skula", bg=SIDEBAR, fg=WHITE, font=("Segoe UI", 17, "bold")).pack(anchor="w", pady=(12, 1))
-        tk.Label(brand, text="Dziennik pod ręką", bg=SIDEBAR, fg=SIDEBAR_MUTED, font=("Segoe UI", 9)).pack(anchor="w")
-        for key, (title, _) in PAGES.items():
+        brand.pack(fill="x", padx=20, pady=(24, 28))
+        tk.Label(brand, image=self.icons["brand"], bg=SIDEBAR).pack(side="left", padx=(0, 8))
+        brand_text = tk.Frame(brand, bg=SIDEBAR)
+        brand_text.pack(side="left")
+        tk.Label(brand_text, text="Skula", bg=SIDEBAR, fg=INK, font=("Segoe UI", 21, "bold")).pack(anchor="w")
+        tk.Label(brand_text, text="Dziennik pod ręką", bg=SIDEBAR, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w")
+        tk.Label(sidebar, text="TWÓJ DZIENNIK", bg=SIDEBAR, fg=MUTED,
+                 font=("Segoe UI", 8, "bold"), anchor="w").pack(fill="x", padx=26, pady=(0, 10))
+        order = ("overview", "schedule", "announcements", "messages", "timetable", "grades",
+                 "attendance", "reminders", "settings")
+        for key in order:
+            title = PAGES[key][0]
             if key == "settings":
-                tk.Frame(sidebar, bg="#314457", height=1).pack(fill="x", padx=20, pady=(20, 12))
+                tk.Frame(sidebar, bg=LINE, height=1).pack(fill="x", padx=22, pady=(16, 10))
             button = tk.Button(
-                sidebar, text=title, command=lambda page=key: self.select_page(page),
-                bg=SIDEBAR, fg=SIDEBAR_MUTED, activebackground="#25495d", activeforeground=WHITE,
-                relief="flat", borderwidth=0, highlightthickness=0,
-                anchor="w", padx=18, pady=5, font=("Segoe UI", 11), cursor="hand2",
+                sidebar, text="  " + title, command=lambda page=key: self.select_page(page),
+                image=self.icons[(key, "muted")], compound="left",
+                bg=SIDEBAR, fg=SIDEBAR_MUTED, activebackground=TEAL_PALE, activeforeground=TEAL,
+                relief="flat", borderwidth=0, highlightthickness=1, highlightbackground=SIDEBAR,
+                highlightcolor=TEAL, anchor="w", padx=12, pady=7, font=("Segoe UI", 10), cursor="hand2",
             )
             button.pack(fill="x", padx=12, pady=2)
             self.nav_buttons[key] = button
         footer = tk.Frame(sidebar, bg=SIDEBAR)
-        footer.pack(side="bottom", fill="x", padx=22, pady=24)
-        self.sidebar_mode = tk.Label(footer, text="Konto niepołączone", bg=SIDEBAR, fg="#d7e5ef", font=("Segoe UI", 9, "bold"), anchor="w")
+        footer.pack(side="bottom", fill="x", padx=22, pady=20)
+        self.sidebar_mode = tk.Label(footer, text="Konto niepołączone", bg=SIDEBAR, fg=TEAL,
+                                    font=("Segoe UI", 9, "bold"), anchor="w")
         self.sidebar_mode.pack(fill="x")
-        tk.Label(footer, text="Dane na tym komputerze", bg=SIDEBAR, fg=SIDEBAR_MUTED, font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(6, 12))
-        tk.Button(
-            footer, text="Otwórz dziennika  ↗", command=lambda: self.call("open_in_skula"),
-            bg=SIDEBAR, fg="#87d8df", activebackground=SIDEBAR, activeforeground=WHITE,
-            font=("Segoe UI", 10), anchor="w", relief="flat", borderwidth=0, padx=0, cursor="hand2",
-        ).pack(fill="x")
+        tk.Label(footer, text="Dane na tym komputerze", bg=SIDEBAR, fg=MUTED,
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(5, 10))
+        tk.Button(footer, text="Otwórz dziennik  ↗", command=lambda: self.call("open_in_skula"),
+                  bg=SIDEBAR, fg=TEAL, activebackground=TEAL_PALE, activeforeground=TEAL_DARK,
+                  font=("Segoe UI", 10), anchor="w", relief="flat", borderwidth=0,
+                  highlightcolor=TEAL, padx=0, cursor="hand2").pack(fill="x")
 
         main = tk.Frame(self.root, bg=BG)
         main.pack(side="left", fill="both", expand=True)
-        header = tk.Frame(main, bg=WHITE, padx=28, pady=20)
+        header = tk.Frame(main, bg=WHITE, padx=24, pady=16)
         header.pack(fill="x")
         heading = tk.Frame(header, bg=WHITE)
         heading.pack(fill="x")
         title_box = tk.Frame(heading, bg=WHITE)
         title_box.pack(side="left", fill="x", expand=True)
-        self.page_title = tk.Label(title_box, text="Przegląd", bg=WHITE, fg=INK, font=("Segoe UI", 23, "bold"), anchor="w")
+        self.page_title = tk.Label(title_box, text="Start", bg=WHITE, fg=INK, font=("Segoe UI", 23, "bold"), anchor="w")
         self.page_title.pack(fill="x")
         self.page_subtitle = tk.Label(title_box, text="", bg=WHITE, fg=MUTED, font=("Segoe UI", 10), anchor="w")
         self.page_subtitle.pack(fill="x", pady=(3, 0))
-        self.login_button = ttk.Button(heading, text="Połącz konto", command=self.show_login, style="Quiet.TButton")
+        self.login_button = ttk.Button(heading, text="Połącz konto", image=self.icons[("account", "muted")], compound="left", command=self.show_login, style="Quiet.TButton")
         self.login_button.pack(side="left", padx=(16, 8))
-        self.refresh_button = ttk.Button(heading, text="Odśwież", command=lambda: self.call("refresh"), style="Accent.TButton")
+        self.refresh_button = ttk.Button(heading, text="Odśwież", image=self.icons[("refresh", "teal")], compound="left", command=lambda: self.call("refresh"), style="Quiet.TButton")
         self.refresh_button.pack(side="left")
         sync_row = tk.Frame(header, bg=WHITE)
         sync_row.pack(fill="x", pady=(15, 0))
@@ -507,75 +499,28 @@ class SkulaApp:
         self.banner_text.pack(side="left", fill="x", expand=True)
         self.demo_change_button = tk.Button(
             self.banner, text="Zasymuluj nową ocenę", command=lambda: self.call("inject_demo_change"),
-            bg=WARNING_BG, fg=WARNING_FG, activebackground="#f3e6bd", activeforeground=WARNING_FG,
+            bg=TEAL_PALE, fg=TEAL, activebackground=TEAL_PALE, activeforeground=TEAL_DARK,
             relief="flat", borderwidth=0, font=("Segoe UI", 9, "bold"), cursor="hand2",
         )
 
         self.notice_label = tk.Label(main, text="", bg=TEAL_PALE, fg=TEAL_DARK, font=("Segoe UI", 10), padx=28, pady=10, anchor="w", justify="left", wraplength=900)
         self.global_error_label = tk.Label(main, text="", bg=ERROR_BG, fg=ERROR_FG, font=("Segoe UI", 10), padx=28, pady=12, anchor="w", justify="left", wraplength=850)
-        self.content = tk.Frame(main, bg=BG, padx=28, pady=23)
+        self.content = tk.Frame(main, bg=BG, padx=24, pady=20)
         self.content.pack(fill="both", expand=True)
         self.bottom_label = tk.Label(
             main, text="Powiadomienia działają, gdy aplikacja jest uruchomiona. Minimalizacja pozostawia je aktywne; zamknięcie je zatrzymuje.",
-            bg=BG, fg=MUTED, font=("Segoe UI", 9), anchor="w", padx=28, pady=12,
+            bg=BG, fg=MUTED, font=("Segoe UI", 9), anchor="w", padx=28, pady=9,
         )
         self.bottom_label.pack(side="bottom", fill="x")
 
     def _build_overview(self) -> None:
-        frame = self._scrollable_page("overview")
-        self.welcome = tk.Frame(frame, bg=WHITE, highlightbackground=LINE, highlightthickness=1, padx=24, pady=21)
-        tk.Label(self.welcome, text="Wszystko w jednym miejscu", bg=WHITE, fg=INK, font=("Segoe UI", 17, "bold"), anchor="w").pack(fill="x")
-        tk.Label(
-            self.welcome,
-            text="Połącz szkolne konto Synergia, aby zobaczyć wiadomości, oceny i najbliższe wydarzenia.\nMożesz też najpierw sprawdzić interfejs na danych demonstracyjnych.",
-            bg=WHITE, fg=MUTED, font=("Segoe UI", 10), anchor="w", justify="left",
-        ).pack(fill="x", pady=(8, 16))
-        actions = tk.Frame(self.welcome, bg=WHITE)
-        actions.pack(fill="x")
-        ttk.Button(actions, text="Połącz konto Synergia", command=self.show_login, style="Accent.TButton").pack(side="left")
-        ttk.Button(actions, text="Zobacz demo", command=lambda: self.call("demo"), style="Quiet.TButton").pack(side="left", padx=(10, 0))
-
-        self.summary_grid = tk.Frame(frame, bg=BG)
-        self.summary_grid.pack(fill="x")
-        self.metric_values: dict[str, tk.Label] = {}
-        self.metric_notes: dict[str, tk.Label] = {}
-        for column, (key, title) in enumerate((("messages", "NIEPRZECZYTANE"), ("grades", "POBRANE OCENY"), ("schedule", "NADCHODZĄCE WYDARZENIA"))):
-            self.summary_grid.columnconfigure(column, weight=1, uniform="metric")
-            card = tk.Frame(self.summary_grid, bg=WHITE, highlightbackground=LINE, highlightthickness=1, padx=18, pady=17)
-            card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 7, 0 if column == 2 else 7))
-            tk.Label(card, text=title, bg=WHITE, fg=MUTED, font=("Segoe UI", 8, "bold"), anchor="w").pack(fill="x")
-            value = tk.Label(card, text="—", bg=WHITE, fg=TEAL_DARK if key == "messages" else INK, font=("Segoe UI", 30, "bold"), anchor="w")
-            value.pack(fill="x", pady=(6, 0))
-            note = tk.Label(card, text="Oczekiwanie na pierwszy odczyt", bg=WHITE, fg=MUTED, font=("Segoe UI", 9), anchor="w", wraplength=235, justify="left")
-            note.pack(fill="x", pady=(3, 0))
-            self.metric_values[key] = value
-            self.metric_notes[key] = note
-
-        self.overview_errors = tk.Label(frame, text="", bg=ERROR_BG, fg=ERROR_FG, font=("Segoe UI", 10), padx=15, pady=12, anchor="w", justify="left", wraplength=850)
-        self.preview_grid = tk.Frame(frame, bg=BG)
-        self.preview_grid.pack(fill="both", expand=True, pady=(18, 0))
-        self.preview_grid.columnconfigure(0, weight=1, uniform="preview")
-        self.preview_grid.columnconfigure(1, weight=1, uniform="preview")
-        self.preview_grid.rowconfigure(0, weight=1)
-        self.preview_lists: dict[str, tk.Frame] = {}
-        for column, (key, title) in enumerate((("grades", "Ostatnie oceny"), ("schedule", "Najbliższe wydarzenia"))):
-            card = tk.Frame(self.preview_grid, bg=WHITE, highlightbackground=LINE, highlightthickness=1, padx=20, pady=18)
-            card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 8, 8 if column == 0 else 0))
-            heading = tk.Frame(card, bg=WHITE)
-            heading.pack(fill="x", pady=(0, 14))
-            tk.Label(heading, text=title, bg=WHITE, fg=INK, font=("Segoe UI", 13, "bold"), anchor="w").pack(side="left", fill="x", expand=True)
-            tk.Button(
-                heading, text="Zobacz", command=lambda section=key: self.select_page(section),
-                bg=WHITE, fg=TEAL, activebackground=WHITE, activeforeground=TEAL_DARK,
-                relief="flat", borderwidth=0, padx=0, font=("Segoe UI", 9, "bold"), cursor="hand2",
-            ).pack(side="right")
-            body = tk.Frame(card, bg=WHITE)
-            body.pack(fill="both", expand=True)
-            self.preview_lists[key] = body
+        from .home_view import HomeView
+        self.home = HomeView(self)
 
     def _settings_card(self, parent: tk.Misc, title: str, *, pady: tuple[int, int] = (0, 14)) -> tk.Frame:
-        card = tk.Frame(parent, bg=WHITE, highlightbackground=LINE, highlightthickness=1, padx=22, pady=18)
-        card.pack(fill="x", pady=pady)
+        surface = Surface(parent, inset=22)
+        surface.pack(fill="x", pady=pady)
+        card = surface.body
         tk.Label(card, text=title, bg=WHITE, fg=INK, font=("Segoe UI", 13, "bold"), anchor="w").pack(fill="x", pady=(0, 10))
         return card
 
@@ -690,7 +635,10 @@ class SkulaApp:
         self.page_subtitle.configure(text=subtitle)
         for key, button in self.nav_buttons.items():
             active = key == name
-            button.configure(bg="#25495d" if active else SIDEBAR, fg=WHITE if active else SIDEBAR_MUTED, font=("Segoe UI", 11, "bold" if active else "normal"))
+            button.configure(bg=TEAL_PALE if active else SIDEBAR, fg=TEAL if active else MUTED,
+                             highlightbackground=TEAL_PALE if active else SIDEBAR,
+                             image=self.icons[(key, "teal" if active else "muted")],
+                             font=("Segoe UI", 10, "bold" if active else "normal"))
         if name in SECTION_TITLES or name == "reminders":
             if name not in self.views:
                 if name == "reminders":
@@ -746,59 +694,27 @@ class SkulaApp:
         return upcoming
 
     def _render_overview(self) -> None:
-        if not hasattr(self, "welcome"):
+        if hasattr(self, "home"):
+            self.home.render()
+
+    def show_cached_item(self, section: str, item: dict) -> None:
+        """Open a cached row without fetching message content or changing read state."""
+        self.select_page(section)
+        view = self.views.get(section)
+        if view is None:
             return
-        state = self.state
-        sections = state.get("sections", {})
-        updated = state.get("updated_at", {})
-        if state.get("mode") == "idle" and not any(sections.values()):
-            self.welcome.pack(fill="x", pady=(0, 18), before=self.summary_grid)
-        else:
-            self.welcome.pack_forget()
-        upcoming = self._upcoming()
-        metrics = {
-            "messages": sum(bool(item.get("unread")) for item in sections.get("messages", [])),
-            "grades": len(sections.get("grades", [])),
-            "schedule": len(upcoming),
-        }
-        for key, metric in metrics.items():
-            known = bool(updated.get(key)) or bool(sections.get(key))
-            self.metric_values[key].configure(text=str(metric) if known else "—")
-            note = {
-                "messages": "W pobranej liście wiadomości",
-                "grades": "W ostatnio pobranych danych",
-                "schedule": "Dzisiaj i w kolejnych dniach",
-            }[key] if known else "Oczekiwanie na pierwszy odczyt"
-            self.metric_notes[key].configure(text=note)
-        errors = state.get("errors", {})
-        if errors:
-            names = [SECTION_TITLES.get(key, {"connection": "Połączenie", "storage": "Zapis danych"}.get(key, key)) for key in errors]
-            self.overview_errors.configure(text="Sprawdź komunikaty: " + ", ".join(names) + ". Sekcje mogą pokazywać poprzedni odczyt.")
-            self.overview_errors.pack(fill="x", pady=(14, 0), before=self.preview_grid)
-        else:
-            self.overview_errors.pack_forget()
-        for key, body in self.preview_lists.items():
-            for child in body.winfo_children():
-                child.destroy()
-            items = upcoming if key == "schedule" else _ordered_items(list(sections.get(key) or []), key)
-            if not items:
-                text = "Brak nadchodzących wydarzeń w pobranych danych." if key == "schedule" and updated.get(key) else self.empty_text(key)
-                tk.Label(body, text=text, bg=WHITE, fg=MUTED, font=("Segoe UI", 10), wraplength=335, justify="left", anchor="nw", pady=16).pack(fill="x")
-                continue
-            for index, item in enumerate(items[:4]):
-                if index:
-                    tk.Frame(body, bg=LINE, height=1).pack(fill="x", pady=11)
-                row = tk.Frame(body, bg=WHITE)
-                row.pack(fill="x")
-                heading = tk.Frame(row, bg=WHITE)
-                heading.pack(fill="x")
-                title = str(item.get("title") or "Bez tytułu")
-                tk.Label(heading, text=title, bg=WHITE, fg=INK, font=("Segoe UI", 10, "bold"), anchor="w", justify="left", wraplength=315).pack(fill="x")
-                meta = " · ".join(str(part) for part in (item.get("subtitle"), _when(item.get("when"), compact=True)) if part and part != "—")
-                tk.Label(row, text=meta, bg=WHITE, fg=MUTED, font=("Segoe UI", 9), anchor="w", justify="left", wraplength=315).pack(fill="x", pady=(4, 0))
-                for widget in (row, *row.winfo_children(), *heading.winfo_children()):
-                    widget.bind("<Button-1>", lambda _event, section=key: self.select_page(section))
-                    widget.configure(cursor="hand2")
+        view.search_var.set("")
+        if section == "schedule":
+            view.set_calendar(False)
+        if section == "messages":
+            view.unread_var.set(False)
+        view.render()
+        row = next((key for key, value in view.items_by_row.items() if value.get("id") == item.get("id")), None)
+        if row:
+            view.tree.selection_set(row)
+            view.tree.focus(row)
+            view.tree.see(row)
+            view._select()
 
     def _render_state(self, payload: dict) -> None:
         self.state = {**self.state, **payload}
@@ -827,8 +743,8 @@ class SkulaApp:
         else:
             self.global_error_label.pack_forget()
         if mode == "demo":
-            self.banner.configure(bg=WARNING_BG)
-            self.banner_text.configure(text="Dane demonstracyjne — przykładowe wpisy, bez połączenia z dziennikiem.", bg=WARNING_BG, fg=WARNING_FG)
+            self.banner.configure(bg=TEAL_PALE)
+            self.banner_text.configure(text="Tryb demo · przykładowe dane, bez połączenia z dziennikiem.", bg=TEAL_PALE, fg=TEAL)
             self.demo_change_button.pack(side="right", padx=(15, 0))
             self.demo_change_button.configure(state="disabled" if busy else "normal")
             self.banner.pack(fill="x", before=self.content)
@@ -840,9 +756,9 @@ class SkulaApp:
         else:
             self.banner.pack_forget()
         unread = sum(bool(item.get("unread")) for item in state.get("sections", {}).get("messages", []))
-        self.nav_buttons["messages"].configure(text=f"Wiadomości   {unread}" if unread else "Wiadomości")
+        self.nav_buttons["messages"].configure(text=f"  Wiadomości   {unread}" if unread else "  Wiadomości")
         pending = sum(r["status"] == "pending" for r in state.get("reminders", []))
-        self.nav_buttons["reminders"].configure(text=f"Przypomnienia   {pending}" if pending else "Przypomnienia")
+        self.nav_buttons["reminders"].configure(text=f"  Przypomnienia   {pending}" if pending else "  Przypomnienia")
         if not self._prefs_dirty:
             self._applying_preferences = True
             self.interval_var.set(str(state.get("interval", 15)))
@@ -1007,6 +923,8 @@ class SkulaApp:
         try:
             self.controller.stop()
         finally:
+            # Release Tk images on the UI thread, including repeated preview windows.
+            self.icons.clear()
             self.root.destroy()
 
     def run(self) -> None:

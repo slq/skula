@@ -2,9 +2,24 @@
 
 Lokalny, nieoficjalny klient konta **dziennika Synergia** dla Windows. Wyświetla dane dziennika, okresowo sprawdza zmiany i umożliwia planowanie własnych przypomnień.
 
-**Wersja: 0.1.1. Status: prototyp rozwijany lokalnie.** Integracja korzysta z nieoficjalnych bibliotek i własnego adaptera logowania; zmiany po stronie dziennika lub konfiguracja szkoły mogą wymagać dostosowania kodu. Projekt nie jest powiązany z producentem dziennika.
+**Wersja: 0.2.0. Status: wersja rozwojowa.** Integracja korzysta z nieoficjalnych bibliotek i własnego adaptera logowania; zmiany po stronie dziennika lub konfiguracja szkoły mogą wymagać dostosowania kodu. Projekt nie jest powiązany z producentem dziennika.
 
-[Opis repozytorium](../README.md) · [Historie użytkownika i kryteria akceptacji](USER_STORIES.md) · [Licencja](LICENSE) · [Źródła i zależności](THIRD_PARTY_NOTICES.md)
+[Opis repozytorium](https://github.com/slq/skula) · [Historie użytkownika i kryteria akceptacji](USER_STORIES.md) · [Licencja](LICENSE) · [Źródła i zależności](THIRD_PARTY_NOTICES.md)
+
+## Wygląd aplikacji
+
+Jasny motyw zgodny wizualnie ze Skulą na Androida: wspólne kolory, znak aplikacji, ikony, miętowe zaznaczenia i karty. Układ desktopowy wykorzystuje boczną nawigację i dwie kolumny na Starcie.
+
+<p align="center">
+  <a href="docs/screenshots/start.png"><img src="docs/screenshots/start.png" width="450" alt="Start Skuli na Windows z pełnym planem dnia, nowościami i ostatnimi ocenami"></a>
+  <a href="docs/screenshots/messages.png"><img src="docs/screenshots/messages.png" width="450" alt="Wiadomości z filtrem nieprzeczytanych i podglądem wybranego wpisu"></a>
+  <a href="docs/screenshots/calendar.png"><img src="docs/screenshots/calendar.png" width="450" alt="Kalendarz Skuli na Windows z wydarzeniami i listą"></a>
+  <a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="450" alt="Karty ustawień konta, odświeżania i danych lokalnych"></a>
+</p>
+
+Zrzuty przedstawiają działającą aplikację na Windows, wyłącznie z fikcyjnymi danymi demo. Kliknij obraz, aby zobaczyć pełny rozmiar.
+
+Start pokazuje cały pobrany plan na **Dzisiaj / Jutro**. Nowości obejmują wszystkie wpisy oznaczone jako nowe lub zmienione w ostatnim odczycie; desktop nie przechowuje jeszcze historii „od ostatniego wejścia” znanej z Androida. Dłuższe listy przewijasz bez dodatkowego rozwijania. Kliknięcie wpisu otwiera jego lokalny podgląd.
 
 ## Wymagania i uruchomienie
 
@@ -12,7 +27,7 @@ Lokalny, nieoficjalny klient konta **dziennika Synergia** dla Windows. Wyświetl
 - Standardowy Python **3.11 lub nowszy**, wraz z `pip` i `tkinter`. Testy sprawdzane są na Pythonie 3.12. Nie używaj dystrybucji „embeddable”.
 - Internet do instalacji bibliotek i synchronizacji konta.
 
-Sklonuj repozytorium lub rozpakuj ZIP, a następnie otwórz folder `skula-app`. Nie uruchamiaj skryptów bezpośrednio z archiwum.
+Pobierz [Skula Windows 0.2.0](https://github.com/slq/skula/releases/tag/windows-v0.2.0), rozpakuj plik `Skula-windows-0.2.0.zip` i otwórz utworzony folder. Możesz też sklonować repozytorium i otworzyć `skula-app`. Nie uruchamiaj skryptów bezpośrednio z archiwum.
 
 | Skrypt | Działanie |
 |---|---|
@@ -23,6 +38,10 @@ Sklonuj repozytorium lub rozpakuj ZIP, a następnie otwórz folder `skula-app`. 
 Przy pierwszym uruchomieniu `Start.cmd` tworzy `.venv` i pobiera zależności z PyPI. Kolejne uruchomienia korzystają z tego środowiska. Nie ma jeszcze instalatora EXE.
 
 Demo nie zastępuje zapisu prawdziwego konta. Możesz w nim obejrzeć sekcje, ustawić tymczasowe przypomnienia oraz użyć **Ustawienia → Test powiadomienia** i **Zasymuluj nową ocenę**.
+
+## Aktualizacja aplikacji
+
+Zamknij poprzednią wersję, rozpakuj nowe wydanie do osobnego folderu i uruchom jego `Start.cmd`. Pierwsze uruchomienie przygotuje własne środowisko `.venv`; nie kopiuj go ze starej paczki. Szyfrowane dane konta i przypomnienia pozostają w dotychczasowym folderze danych Windows. [Opis zmian 0.2.0](RELEASE_NOTES.md).
 
 ## Połączenie konta
 
@@ -37,11 +56,11 @@ Pierwszy poprawny odczyt sekcji ustala punkt odniesienia bez powiadomień o star
 
 | Sekcja | Zakres |
 |---|---|
-| Przegląd | Ostatnie oceny, nadchodzące wydarzenia i liczba nieprzeczytanych wiadomości w pobranej liście |
+| Start | Pełny plan dzisiaj/jutro, nowości z ostatniego odczytu, ostatnie oceny, nadchodzące wydarzenia i nieprzeczytane wiadomości |
 | Oceny | Oceny numeryczne i opisowe, daty, kategorie i komentarze |
 | Wiadomości | Do 200 najnowszych nagłówków, nadawca, data i status przeczytania; osobne pobieranie treści |
 | Ogłoszenia | Tytuł, autor, data i treść; wyszukiwanie i wykrywanie zmian |
-| Terminarz | Bieżący i kolejny miesiąc, kalendarz z listą lub sama lista |
+| Kalendarz | Bieżący i kolejny miesiąc, kalendarz z listą lub sama lista |
 | Frekwencja | Wpisy udostępnione przez dziennika |
 | Plan lekcji | Bieżący i kolejny tydzień oraz zmiany zwracane przez bibliotekę |
 | Przypomnienia | Własne alerty z terminem, edycja, usuwanie i lista wykonanych przypomnień |
@@ -51,6 +70,8 @@ Listy obsługują wyszukiwanie i sortowanie. Przy błędzie sekcji pozostaje ost
 
 ### Wiadomości
 
+Przełącznik **Wszystkie / Nieprzeczytane** działa razem z wyszukiwaniem na lokalnej kopii. Zmiana filtra nie pobiera treści i nie oznacza wiadomości jako przeczytanej.
+
 Synchronizacja pobiera nagłówki bez wywoływania szczegółu wiadomości. **Pobierz treść (oznaczy jako przeczytaną)** pobiera szczegół; dziennik może wtedy oznaczyć wiadomość jako przeczytaną. Przycisk znajduje się w stałym pasku nad listą i pozostaje widoczny po zwinięciu podglądu. Aktywuje się po wybraniu wpisu.
 
 Treść wyświetla się bez aktywnego HTML i zewnętrznych obrazów. Pełna pobrana treść nie trafia do trwałej kopii. Załączniki otwierasz w oficjalnym dzienniku.
@@ -59,7 +80,7 @@ Treść wyświetla się bez aktywnego HTML i zewnętrznych obrazów. Pełna pobr
 
 Treść jest pobierana wraz z listą i dostępna po wybraniu wpisu. Pierwszy odczyt jest cichy, a kolejne wykrywają nowe wpisy i zmiany treści. Biblioteka nie udostępnia identyfikatora ogłoszenia, więc wpis rozpoznawany jest po tytule, autorze i dacie; zmiana tych pól oznacza nowy wpis.
 
-### Kalendarz terminarza
+### Kalendarz
 
 Domyślny widok **Kalendarz + lista** pokazuje miesiąc z wydarzeniami i listę poniżej. Strzałki zmieniają miesiąc, a liczba przy dniu oznacza liczbę wydarzeń pasujących do wyszukiwania. Gwiazdka oznacza dzisiaj, „+” nowe lub zmienione wpisy.
 
@@ -79,7 +100,7 @@ Tryb „Nie przeszkadzać” i ustawienia Windows mogą ukryć baner. Sukces tes
 
 ## Własne przypomnienia
 
-1. W **Ogłoszeniach**, **Terminarzu** lub **Wiadomościach** wybierz wpis i kliknij **Przypomnij mi…**.
+1. W **Ogłoszeniach**, **Kalendarzu** lub **Wiadomościach** wybierz wpis i kliknij **Przypomnij mi…**.
 2. Podaj treść do 200 znaków, datę `dd.mm.rrrr` i godzinę `gg:mm`. Możesz wybrać **Za 15 minut**, **Za godzinę** lub **Jutro 09:00**. Termin musi być w przyszłości i używa lokalnego czasu komputera.
 3. Wybierz, czy **Pokaż treść w powiadomieniu Windows**. Po wyłączeniu tej opcji baner zawiera ogólny komunikat.
 4. W **Przypomnieniach** możesz edytować i usuwać alerty oraz wracać do źródłowych wpisów. Zmiana terminu wykonanego alertu planuje go ponownie.
@@ -114,7 +135,7 @@ Nie publikuj haseł, cookies, plików `state.dpapi` ani zrzutów z danymi uczni�
 
 1. Zamknij poprzednią aplikację przed uruchomieniem Skula.
 2. Pobierz nowe pliki repozytorium i uruchom `skula-app/Start.cmd`.
-3. Okno powinno mieć tytuł **Skula 0.1.1**. Konto, kopia i przypomnienia ze starego folderu danych pozostają dostępne.
+3. Okno powinno mieć tytuł **Skula 0.2.0**. Konto, kopia i przypomnienia ze starego folderu danych pozostają dostępne.
 
 Pakiet Pythona zmienił nazwę na `skula_app`. Przy ręcznym uruchamianiu używaj `python -m skula_app`. Windows rejestruje powiadomienia pod nową nazwą **Skula**, dlatego sprawdź ich ustawienia i wykonaj test po aktualizacji.
 
@@ -150,6 +171,8 @@ py -3 -m venv .venv
 | Moduł | Odpowiedzialność |
 |---|---|
 | `skula_app/ui.py` | Okno Tkinter, listy, logowanie i komunikaty |
+| `skula_app/theme.py`, `assets/` | Kolory, style, karty i lokalne ikony wspólnego motywu |
+| `skula_app/home_view.py` | Start: lokalny plan dnia, nowości i skróty do wpisów |
 | `skula_app/calendar_view.py` | Kalendarz i przełączanie widoków terminarza |
 | `skula_app/reminders.py`, `reminder_view.py` | Terminy alertów, formularz i lista przypomnień |
 | `skula_app/core.py` | Worker, harmonogram, konto i wykrywanie zmian |
@@ -160,9 +183,17 @@ py -3 -m venv .venv
 
 Testy obejmują logowanie na syntetycznym transporcie HTTP, obsługę przekierowań, ochronę danych w diagnostyce, wykrywanie zmian, awarie zapisu, DPAPI, przypomnienia i układ interfejsu. Testy powiadomień sprawdzają rzeczywisty kod PowerShell bez wysyłania banerów. Testy korzystają z osobnego katalogu danych i nie odczytują zapisanego konta użytkownika. Nie zastępują weryfikacji konkretnego konta dziennika.
 
-Ostatnia weryfikacja po zmianie nazwy na Skula: **160 testów zaliczonych, 2 pominięte i 16 subtestów zaliczonych**, Windows 11, Python 3.12.10. Sprawdzono także odczyt, zapis i usunięcie syntetycznego konta w starszym folderze danych oraz pierwszeństwo nowego zapisu. Pominięte testy dotyczą działania poza Windows.
+Weryfikacja motywu z 14 października 2026: **180 testów zaliczonych, 2 pominięte i 16 subtestów zaliczonych**, Windows 11, Python 3.12.10. Sprawdzono pełne listy 12 lekcji i 8 nowości, długie tytuły, przełączanie dni, filtry wiadomości, podgląd konkretnego wpisu bez odczytu sieciowego oraz okna 1080×720 i 1280×880. Pominięte testy dotyczą działania poza Windows. Dane konta, DPAPI, adapter i harmonogram pozostały bez zmian.
+
+Zrzuty demo można odtworzyć przez `.venv/Scripts/python.exe tools/capture_theme.py`. Narzędzie pokazuje na chwilę własne okno demo i zapisuje wyłącznie jego obraz do `docs/screenshots/`; nie odczytuje zapisanego konta. Ikony są dołączone do aplikacji. Ich opcjonalne odtworzenie przez `tools/generate_theme_icons.py` wymaga Pillow wyłącznie w środowisku deweloperskim.
 
 Nie ustawiaj globalnego polskiego `LC_TIME`: `librus-apix` porównuje dzień tygodnia z angielskim `Monday`. UI formatuje daty samodzielnie. Powiadomienia korzystają ze stałego programu PowerShell/WinRT, a tekst jest przekazywany jako JSON przez stdin.
+
+### Przygotowanie wydania Windows
+
+Uruchom `python tools/prepare_release.py` z katalogu `skula-app`. Skrypt zapisuje ZIP oraz SHA-256 w ignorowanym katalogu `dist/`. Paczka zawiera odpowiadające źródła, lokalne ikony, zrzuty i licencje; pomija środowisko `.venv`, lokalne dane i pliki kompilacji.
+
+Publikuj pod tagiem `windows-vX.Y.Z`. W GitHub Releases pozostaw **Release label: None**, ponieważ **Latest** wskazuje wydanie Androida używane przez aktualizator telefonu. Po publikacji sprawdź zarówno ZIP Windows, jak i adres metadanych aktualizacji Androida.
 
 ## Licencja i źródła
 

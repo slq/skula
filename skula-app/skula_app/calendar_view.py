@@ -62,7 +62,7 @@ class ScheduleView(SectionView):
         self.all_days_button = ttk.Button(header, text="Cały miesiąc", command=self.clear_day, style="Calendar.TButton")
         self.all_days_button.pack(side="right", padx=(0, 8))
 
-        self.days_frame = tk.Frame(self.calendar_frame, bg=LINE)
+        self.days_frame = tk.Frame(self.calendar_frame, bg=WHITE)
         self.days_frame.pack(fill="x")
         self.calendar_note = tk.Label(self.calendar_frame, bg=WHITE, fg=MUTED, font=("Segoe UI", 9),
                                       anchor="w", justify="left", wraplength=760)
@@ -74,8 +74,8 @@ class ScheduleView(SectionView):
     def set_calendar(self, visible: bool) -> None:
         self.show_calendar = visible
         self.selected_day = None
-        self.calendar_button.configure(style="Accent.TButton" if visible else "Quiet.TButton")
-        self.list_button.configure(style="Quiet.TButton" if visible else "Accent.TButton")
+        self.calendar_button.configure(style="Selected.TButton" if visible else "Pill.TButton")
+        self.list_button.configure(style="Pill.TButton" if visible else "Selected.TButton")
         if visible:
             self.calendar_frame.pack(fill="x", pady=(0, 10), before=self.panes)
         else:

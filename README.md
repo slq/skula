@@ -33,6 +33,14 @@ Skula Android z fikcyjnymi danymi demo. Zrzuty przedstawiają interfejs wersji 0
 
 Obie wersje pokazują dane dziennika, obsługują wyszukiwanie i własne przypomnienia oraz mają tryb demo bez logowania. Szczegółowy zakres funkcji zależy od platformy.
 
+### Wspólny motyw na Windows
+
+Wersja desktopowa korzysta z tych samych kolorów i ikon, z boczną nawigacją oraz pełnym planem dnia na Starcie.
+
+[![Skula na Windows — ekran Start z danymi demo](skula-app/docs/screenshots/start.png)](skula-app/docs/screenshots/start.png)
+
+[Więcej zrzutów i instrukcja Windows](skula-app/README.md#wygląd-aplikacji).
+
 ## Szybki start
 
 ### Android
@@ -47,7 +55,7 @@ Obie wersje pokazują dane dziennika, obsługują wyszukiwanie i własne przypom
 
 Potrzebujesz standardowego Pythona **3.11 lub nowszego** z `pip` oraz `tkinter`.
 
-1. Sklonuj repozytorium lub rozpakuj jego ZIP.
+1. Pobierz i rozpakuj [Skula Windows 0.2.0](https://github.com/slq/skula/releases/tag/windows-v0.2.0) albo sklonuj repozytorium.
 2. Uruchom [Demo.cmd](skula-app/Demo.cmd), aby obejrzeć aplikację na fikcyjnych danych.
 3. Uruchom [Start.cmd](skula-app/Start.cmd), aby połączyć konto Synergia.
 
