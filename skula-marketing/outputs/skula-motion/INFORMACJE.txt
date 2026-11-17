@@ -1,0 +1,37 @@
+SKULA — FILM REKLAMOWY PL
+========================
+Gotowy film: skula-reklama-pl-1080x1920.mp4
+Podgląd: index.html
+Okładka: skula-okladka.jpg
+Plansza sześciu scen: storyboard.jpg
+Muzyka: skula-muzyka-original.wav
+Źródło animacji: render.py
+
+Format: 1080 × 1920, 9:16, 30 kl./s, 24 sekundy.
+Wideo H.264, dźwięk AAC 48 kHz stereo.
+Polskie napisy wtopione w obraz, bez lektora.
+Muzyka instrumentalna: synteza autorska, 120 BPM, bez zewnętrznych nagrań.
+Głośność docelowa eksportu: -16 LUFS, peak limit -1.5 dBTP.
+
+SCENY
+00:00–00:04  Szkolny dzień. Tyle spraw.
+00:04–00:08  Poznaj Skulę. Szkolne sprawy w jednym miejscu.
+00:08–00:12  Plan dnia. Pod kontrolą.
+00:12–00:16  Zadania? Odhaczone.
+00:16–00:20  Wiesz, co nowego. Oceny i wiadomości pod ręką.
+00:20–00:24  Mniej chaosu. Więcej spokoju. Poznaj Skulę.
+
+ŹRÓDŁA
+Logo i kolory: ../../brand oraz ../../README-brand.md.
+Interfejs: ../../skula-04-start-360.png i ../../skula-02-ekrany.png.
+Zadania i przykładowe wpisy: istniejące makiety Skuli.
+Ekrany są wizualizacjami interfejsu, nie nagraniem działającej aplikacji.
+Nie dodano linku ani odznaki Google Play: nie podano adresu aplikacji.
+
+PONOWNY EKSPORT
+Wymagane: Python 3, Pillow, NumPy, FFmpeg oraz czcionki Segoe UI.
+python render.py --preview
+python render.py
+
+Otwórz index.html w przeglądarce, aby obejrzeć film z dźwiękiem.
+
